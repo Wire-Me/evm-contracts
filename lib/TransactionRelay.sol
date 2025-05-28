@@ -191,6 +191,7 @@ contract TransactionRelay is IRelay {
         Relay storage relay = relays[_creator][_index];
         uint amountOfFundsWithdrawn = _amount;
 
+        // If the relay is not locked, the full amount can be withdrawn
         if (relay.isLocked && (relay.isReturning || relay.isApproved)) {
             uint fee = _calculateFee(_amount);
             amountOfFundsWithdrawn = _amount - fee;
