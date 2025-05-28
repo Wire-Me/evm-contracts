@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.23;
 
-import "./IRelay.sol";
+import {IRelay} from "./IRelay.sol";
 
 /// @author Ian Pierce
 contract TransactionRelay is IRelay {
