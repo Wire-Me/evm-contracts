@@ -1,40 +1,13 @@
-// SPDX-License-Identifier: GNU
+// SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.23;
 
-contract TransactionRelay {
+import "./IRelay.sol";
+
+/// @author Ian Pierce
+contract TransactionRelay is IRelay {
     address public owner; // The account which deployed this contract
     string public coinSymbol = "ETH"; // The symbol of the coin used in this contract
     uint16 public basisPointFee = 100; // The fee for using this contract (1%)
-
-    struct Relay {
-        // the address of the buyer's account
-        address payer;
-        // the address of the seller's account
-        address payee;
-        // the address of the account which initially created the agreement (must be either the buyer or the seller in
-        // this agreement)
-        address creator;
-        // 'true' if initialized
-        bool initialized;
-        // Balance info
-        uint requiredBalance;
-        uint currentBalance;
-        // State info
-        bool isLocked;
-        bool isReturning;
-        bool isApproved;
-        // Time info
-        uint automaticallyApprovedAt;
-        uint allowReturnAfter;
-    }
-
-    event RelayCreated(address indexed _creator, uint indexed _agreementIndex, address _buyer, address _seller);
-    event FundsDeposited(address indexed _creator, uint indexed _agreementIndex, uint amountDeposited, uint currentBalance, uint requiredBalance);
-    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint currentBalance, uint requiredBalance);
-    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint relayCurrentBalance, uint accountCurrentBalance);
-    event RelayLocked(address indexed _creator, uint indexed _agreementIndex);
-    event RelayApproved(address indexed _creator, uint indexed _agreementIndex);
-    event RelayReturned(address indexed _creator, uint indexed _agreementIndex);
 
     mapping(address => Relay[]) public relays;
     mapping(address => uint) public accountBalances;
@@ -43,12 +16,14 @@ contract TransactionRelay {
         owner = msg.sender;
     }
 
-    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyApprovedAt, uint _allowReturnAfter) public {
+    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyApprovedAt, uint _allowReturnAfter) external override {
         require(msg.sender == _payer || msg.sender == _payee, "TransactionRelay: only the payer or payee can create a relay");
         require(_payer != _payee, "TransactionRelay: payer and payee must be different addresses");
         require(_requiredBalance > 0, "TransactionRelay: required balance must be greater than 0");
         require(_payer != address(0), "TransactionRelay: payer address must not be 0x0");
         require(_payee != address(0), "TransactionRelay: payee address must not be 0x0");
+        require(_automaticallyApprovedAt > block.timestamp, "TransactionRelay: automatically approved at timestamp must be in the future");
+        require(_automaticallyApprovedAt > _allowReturnAfter, "TransactionRelay: automatically approved at timestamp must be after allow return after timestamp");
 
         relays[msg.sender].push(
             Relay({
@@ -70,22 +45,22 @@ contract TransactionRelay {
     }
 
     // Returns information about the agreement
-    function getRelayActors(address _creator, uint _index) public view returns (address, address, address, bool) {
+    function getRelayActors(address _creator, uint _index) external view override returns (address, address, address, bool) {
         Relay storage relay = relays[_creator][_index];
         return (relay.payer, relay.payee, relay.creator, relay.initialized);
     }
 
-    function getRelayBalances(address _creator, uint _index) public view returns (uint, uint, bool) {
+    function getRelayBalances(address _creator, uint _index) external view override returns (uint, uint, bool) {
         Relay storage relay = relays[_creator][_index];
         return (relay.requiredBalance, relay.currentBalance, relay.initialized);
     }
 
-    function getRelayState(address _creator, uint _index) public view returns (bool, bool, bool, uint, uint, bool) {
+    function getRelayState(address _creator, uint _index) external view override returns (bool, bool, bool, uint, uint, bool) {
         Relay storage relay = relays[_creator][_index];
         return (relay.isLocked, relay.isReturning, relay.isApproved, relay.automaticallyApprovedAt, relay.allowReturnAfter, relay.initialized);
     }
 
-    function depositFunds(address _creator, uint _index) public payable {
+    function depositFunds(address _creator, uint _index) external override payable {
         require(msg.value > 0, "TransactionRelay: deposit amount must be greater than 0");
         require(relays[_creator][_index].payer == msg.sender, "TransactionRelay: Only the payer can deposit funds");
         relays[_creator][_index].currentBalance += msg.value;
@@ -93,7 +68,7 @@ contract TransactionRelay {
         emit FundsDeposited(_creator, _index, msg.value, relays[_creator][_index].currentBalance, relays[_creator][_index].requiredBalance);
     }
 
-    function stashFunds(address _creator, uint _index) public {
+    function stashFunds(address _creator, uint _index) external override {
         Relay storage relay = relays[_creator][_index];
 
         uint amount = relay.currentBalance;
@@ -102,13 +77,14 @@ contract TransactionRelay {
         uint amountOfFundsStashed = _calculateAmountWithdrawn(_creator, _index, amount);
 
         accountBalances[msg.sender] += amountOfFundsStashed;
+        // Adds fee to the owner's account balance
         accountBalances[owner] += (amount - amountOfFundsStashed);
         relay.currentBalance = 0;
 
         emit FundsStashed(_creator, _index, amount, relay.currentBalance, accountBalances[msg.sender]);
     }
 
-    function withdrawFunds(address _creator, uint _index, uint _amount) public {
+    function withdrawFunds(address _creator, uint _index, uint _amount) external override {
         Relay storage relay = relays[_creator][_index];
 
         _validateWithdrawal(_creator, _index, _amount);
@@ -116,13 +92,14 @@ contract TransactionRelay {
         uint amountOfFundsWithdrawn = _calculateAmountWithdrawn(_creator, _index, _amount);
 
         relay.currentBalance -= _amount;
+        // Adds fee to the owner's account balance
         accountBalances[owner] += (_amount - amountOfFundsWithdrawn);
         payable(msg.sender).transfer(amountOfFundsWithdrawn);
 
         emit FundsWithdrawn(_creator, _index, _amount, relay.currentBalance, relay.requiredBalance);
     }
 
-    function lockRelay(address _creator, uint _index) public {
+    function lockRelay(address _creator, uint _index) external override {
         Relay storage relay = relays[_creator][_index];
 
         require(relay.isLocked == false, "TransactionRelay: relay is already locked");
@@ -134,7 +111,7 @@ contract TransactionRelay {
         emit RelayLocked(_creator, _index);
     }
 
-    function approveRelay(address _creator, uint _index) public {
+    function approveRelay(address _creator, uint _index) external override {
         Relay storage relay = relays[_creator][_index];
 
         require(relay.payer == msg.sender, "TransactionRelay: only the payer can approve the relay");
@@ -147,7 +124,7 @@ contract TransactionRelay {
         emit RelayApproved(_creator, _index);
     }
 
-    function returnRelay(address _creator, uint _index) public {
+    function returnRelay(address _creator, uint _index) external override {
         Relay storage relay = relays[_creator][_index];
         require(relay.isLocked == true, "TransactionRelay: can only return funds if locked");
         require(relay.isApproved == false, "TransactionRelay: can not return funds if already approved");
@@ -177,14 +154,15 @@ contract TransactionRelay {
         return relays[_creator][_index].allowReturnAfter > 0;
     }
 
-    function _isPassedCompletionTime(address _creator, uint _index) private view returns (bool) {
+    function _isPassedAutomaticApprovalTime(address _creator, uint _index) private view returns (bool) {
         return relays[_creator][_index].automaticallyApprovedAt < block.timestamp;
     }
 
-    function _isGuaranteedAndPassedCompletionTime(address _creator, uint _index) private view returns (bool) {
-        return _isGuaranteed(_creator, _index) && _isPassedCompletionTime(_creator, _index);
-    }
-
+    /// @notice Validates the withdrawal of funds from the relay.
+    /// @custom:revert If the relay is not locked only the payer can withdraw funds. Reverts otherwise
+    /// @custom:revert If the relay is locked & returning only the payer can withdraw funds & _amount must equal the current balance. Reverts otherwise.
+    /// @custom:revert If the relay is locked & approved only the payee can withdraw funds & _amount must equal the current balance. Reverts otherwise.
+    /// @custom:revert If the relay is locked & not approved only the payee can withdraw funds & it must be passed the automatic approval timestamp. Reverts otherwise.
     function _validateWithdrawal(address _creator, uint _index, uint _amount) private view {
         Relay storage relay = relays[_creator][_index];
         require(relay.currentBalance >= _amount, "TransactionRelay: insufficient balance");
@@ -197,9 +175,9 @@ contract TransactionRelay {
         } else if (relay.isLocked && relay.isApproved) {
             require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and approved)");
             require(_amount == relay.currentBalance, "TransactionRelay: can not withdraw partial funds if marked as approved");
-        } else if (relay.isLocked && _isGuaranteed(_creator, _index) && !relay.isApproved) {
-            require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked, guaranteed, and not approved)");
-            require(_isPassedCompletionTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed completion time");
+        } else if (relay.isLocked && !relay.isApproved) {
+            require(_isPassedAutomaticApprovalTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed automatic approval time");
+            require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and not approved)");
         } else {
             revert("TransactionRelay: can not withdraw funds if relay is locked and not approved or returning");
         }
