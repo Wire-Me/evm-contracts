@@ -1,6 +1,9 @@
 .env
 node_modules
 
+# Jetbrains IDE files
+.idea
+
 # Hardhat files
 /cache
 /artifacts
