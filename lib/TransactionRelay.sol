@@ -5,15 +5,19 @@ import "./IRelay.sol";
 
 /// @author Ian Pierce
 contract TransactionRelay is IRelay {
-    address public owner; // The account which deployed this contract
-    string public coinSymbol = "ETH"; // The symbol of the coin used in this contract
-    uint16 public basisPointFee = 100; // The fee for using this contract (1%)
+    address payable public owner; // The account which deployed this contract
+    string public coinSymbol; // The symbol of the coin used in this contract ('ETH', 'USDC', 'MATIC', etc.)
+    uint16 public basisPointFee; // The fee for using this contract in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
 
     mapping(address => Relay[]) public relays;
     mapping(address => uint) public accountBalances;
 
-    constructor() {
-        owner = msg.sender;
+    constructor(string memory _symbol, uint16 _basisPointFee) {
+        require(_basisPointFee <= 10000, "TransactionRelay: basis point fee must be less than or equal to 10000 (100%)");
+        require(bytes(_symbol).length > 0, "TransactionRelay: coin symbol must not be empty");
+        owner = payable(msg.sender);
+        coinSymbol = _symbol;
+        basisPointFee = _basisPointFee;
     }
 
     function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyApprovedAt, uint _allowReturnAfter) external override {
