@@ -179,7 +179,7 @@ contract TransactionRelay is IRelay {
             require(_isPassedAutomaticApprovalTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed automatic approval time");
             require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and not approved)");
         } else {
-            revert("TransactionRelay: can not withdraw funds if relay is locked and not approved or returning");
+            revert("TransactionRelay: can not withdraw funds if relay is locked and not returning");
         }
     }
 
