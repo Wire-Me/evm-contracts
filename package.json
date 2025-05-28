@@ -1,0 +1,14 @@
+{
+  "name": "evm-contracts",
+  "version": "1.0.0",
+  "description": "EVM contracts for WireMe",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ian Pierce",
+  "license": "GPL-3.0-or-later"
+}
