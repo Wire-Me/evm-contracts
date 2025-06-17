@@ -20,14 +20,14 @@ contract TransactionRelay is IRelay {
         basisPointFee = _basisPointFee;
     }
 
-    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyApprovedAt, uint _allowReturnAfter) external override {
+    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter) external override {
         require(msg.sender == _payer || msg.sender == _payee, "TransactionRelay: only the payer or payee can create a relay");
         require(_payer != _payee, "TransactionRelay: payer and payee must be different addresses");
         require(_requiredBalance > 0, "TransactionRelay: required balance must be greater than 0");
         require(_payer != address(0), "TransactionRelay: payer address must not be 0x0");
         require(_payee != address(0), "TransactionRelay: payee address must not be 0x0");
-        require(_automaticallyApprovedAt > block.timestamp, "TransactionRelay: automatically approved at timestamp must be in the future");
-        require(_automaticallyApprovedAt > _allowReturnAfter, "TransactionRelay: automatically approved at timestamp must be after allow return after timestamp");
+        require(_automaticallyUnlockAt > block.timestamp, "TransactionRelay: automatically approved at timestamp must be in the future");
+        require(_automaticallyUnlockAt > _allowReturnAfter, "TransactionRelay: automatically approved at timestamp must be after allow return after timestamp");
 
         relays[msg.sender].push(
             Relay({
@@ -40,7 +40,7 @@ contract TransactionRelay is IRelay {
                 isLocked: false,
                 isReturning: false,
                 isApproved: false,
-                automaticallyApprovedAt: _automaticallyApprovedAt,
+                automaticallyApprovedAt: _automaticallyUnlockAt,
                 allowReturnAfter: _allowReturnAfter
             })
         );
@@ -61,7 +61,7 @@ contract TransactionRelay is IRelay {
 
     function getRelayState(address _creator, uint _index) external view override returns (bool, bool, bool, uint, uint, bool) {
         Relay storage relay = relays[_creator][_index];
-        return (relay.isLocked, relay.isReturning, relay.isApproved, relay.automaticallyApprovedAt, relay.allowReturnAfter, relay.initialized);
+        return (relay.isLocked, relay.isReturning, relay.isApproved, relay.automaticallyUnlockAt, relay.allowReturnAfter, relay.initialized);
     }
 
     function depositFunds(address _creator, uint _index) external override payable {
@@ -159,7 +159,7 @@ contract TransactionRelay is IRelay {
     }
 
     function _isPassedAutomaticApprovalTime(address _creator, uint _index) private view returns (bool) {
-        return relays[_creator][_index].automaticallyApprovedAt < block.timestamp;
+        return relays[_creator][_index].automaticallyUnlockAt < block.timestamp;
     }
 
     /// @notice Validates the withdrawal of funds from the relay.
