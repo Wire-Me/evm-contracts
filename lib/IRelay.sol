@@ -3,60 +3,13 @@ pragma solidity ^0.8.23;
 
 /// @author Ian Pierce
 interface IRelay {
-    struct Relay {
-        /// @notice the address of the buyer's account
-        address payer;
-        /// @notice the address of the seller's account
-        address payee;
-        /// @notice the address of the account which initially created the agreement (must be either the payer or the payee)
-        address creator;
-        /// @notice 'true' if initialized
-        bool initialized;
-        /// @notice the amount of funds required to be deposited by the payer
-        uint requiredBalance;
-        /// @notice the current balance of the relay (the amount of funds deposited by the payer)
-        uint currentBalance;
-        /// @notice 'true' if the relay is locked (the nobody cannot withdraw funds)
-        /// @dev This property is never set to 'false' after being set to 'true'. For funds to be withdrawn, the relay must be either approved or returned (see below).
-        bool isLocked;
-        /// @notice 'true' if the relay is returning (the payer can withdraw funds)
-        bool isReturning;
-        /// @notice 'true' if the relay is approved (the payee can withdraw funds)
-        bool isApproved;
-        /// @notice The epoch timestamp (seconds) at which the relay will be automatically approved if not already approved (funds are able to be withdrawn by the payee).
-        /// @dev For conditional relays this is the refund deadline, and for guaranteed relays this is the completion date.
-        uint automaticallyApprovedAt;
-        /// @notice The epoch timestamp (seconds) after which the relay can be refunded. (funds are able to be withdrawn by the payer).
-        /// @dev For conditional relays this is the completion date, and for guaranteed relays this is zero (guaranteed relays can be returned at any time).
-        uint allowReturnAfter;
-    }
-
     event RelayCreated(address indexed _creator, uint indexed _agreementIndex, address _buyer, address _seller);
     event FundsDeposited(address indexed _creator, uint indexed _agreementIndex, uint amountDeposited, uint currentBalance, uint requiredBalance);
-    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint currentBalance, uint requiredBalance);
-    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint relayCurrentBalance, uint accountCurrentBalance);
+    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
+    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
     event RelayLocked(address indexed _creator, uint indexed _agreementIndex);
     event RelayApproved(address indexed _creator, uint indexed _agreementIndex);
     event RelayReturned(address indexed _creator, uint indexed _agreementIndex);
-
-    /// @notice Creates a new relay agreement between two parties.
-    /// ---
-    /// @param _requiredBalance The amount of funds required to be deposited by the payer.
-    /// @param _payer The address of the payer (the buyer in the agreement).
-    /// @param _payee The address of the payee (the seller in the agreement).
-    /// @param _automaticallyApprovedAt The epoch timestamp (seconds) at which the relay will be automatically approved if not already approved (funds are able to be withdrawn by the payee).
-    /// @dev _automaticallyApprovedAt - For conditional relays this is the refund deadline, and for guaranteed relays this is the completion date.
-    /// @param _allowReturnAfter The epoch timestamp (seconds) after which the relay can be refunded. (funds are able to be withdrawn by the payer).
-    /// @dev _allowReturnAfter - For conditional relays this is the completion date, and for guaranteed relays this must be zero (guaranteed relays can be returned at any time).
-    /// ---
-    /// @custom:revert If the payer is the zero address, or if the payee is the zero address, or if the required balance is zero.
-    /// @custom:revert If the automatically approved at timestamp is in the past
-    /// @custom:revert If the automatically approved at timestamp is less than the allow return after timestamp.
-    /// @custom:revert If the payer and payee are the same address.
-    /// @custom:revert If the caller is not the payer or the payee.
-    /// ---
-    /// @custom:event Emits a RelayCreated event.
-    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyApprovedAt, uint _allowReturnAfter) external;
 
     /// @notice Gets information about the actors involved in the relay agreement.
     /// ---
@@ -106,7 +59,7 @@ interface IRelay {
     /// @custom:event Emits a FundsStashed event.
     function stashFunds(address _creator, uint _index) external;
 
-    /// @notice Withdraws funds from the relay agreement.
+    /// @notice Withdraws all funds from the relay agreement.
     /// @dev Must pass the _validateWithdrawal function to ensure the withdrawal is valid (see _validateWithdrawal docs in contract).
     /// @dev Calculates the amount to withdraw based on the fee basis point value
     /// @dev The fee portion of the balance is transferred to the contract owner's account balance.
@@ -114,10 +67,9 @@ interface IRelay {
     /// ---
     /// @param _creator The address of the account which created the agreement.
     /// @param _index The index of the relay agreement in the creator's relays.
-    /// @param _amount The amount of funds to withdraw from the relay.
     /// ---
     /// @custom:event Emits a FundsWithdrawn event.
-    function withdrawFunds(address _creator, uint _index, uint _amount) external;
+    function withdrawFunds(address _creator, uint _index) external;
 
     /// @notice Locks the relay agreement, preventing any withdrawals until it is either approved or returned.
     /// ---
@@ -126,7 +78,7 @@ interface IRelay {
     /// @custom:revert If the relay's current balance is not equal to the required balance.
     /// ---
     /// @custom:event Emits a RelayLocked event.
-    function lockRelay(address _creator, uint _index) external;
+//    function lockRelay(address _creator, uint _index) external;
 
     /// @notice Approves the relay agreement, allowing the payee to withdraw funds.
     /// ---
@@ -147,4 +99,9 @@ interface IRelay {
     /// ---
     /// @custom:event Emits a RelayReturned event.
     function returnRelay(address _creator, uint _index) external;
+
+    /// @notice If the relays in this contract are disputable
+    /// ---
+    /// @return A boolean indicating whether the relay is disputable or not.
+    function isDisputable() external pure returns (bool);
 }
