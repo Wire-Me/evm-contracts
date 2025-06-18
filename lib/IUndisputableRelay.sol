@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import {IRelay} from "./IRelay.sol";
 
 /// @author Ian Pierce
-interface IUndisputableRelay is IRelay {
+interface IUndisputableRelay {
     /// @notice Creates a new relay agreement between two parties.
     /// ---
     /// @param _requiredBalance The amount of funds required to be deposited by the payer.

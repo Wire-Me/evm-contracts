@@ -30,7 +30,7 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
                 isLocked: false,
                 isReturning: false,
                 isApproved: false,
-                automaticallyApprovedAt: _automaticallyUnlockAt,
+                automaticallyUnlockAt: _automaticallyUnlockAt,
                 allowReturnAfter: _allowReturnAfter
             })
         );

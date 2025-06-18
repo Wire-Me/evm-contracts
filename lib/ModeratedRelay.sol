@@ -23,7 +23,7 @@ contract ModeratedRelay is DisputableRelayBase {
         emit RelayApproved(_creator, _index);
     }
 
-    function returnRelay(address _creator, uint _index) external override {
+    function returnRelay(address /* _creator */, uint /* _index */) external pure override {
         revert("ModeratedRelay: returnRelay is not supported in ModeratedRelay contract. Use disputeRelay instead.");
     }
 }

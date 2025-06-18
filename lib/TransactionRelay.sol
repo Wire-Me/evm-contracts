@@ -5,13 +5,22 @@ import "./EscrowStructs.sol";
 import {IRelay} from "./IRelay.sol";
 
 /// @author Ian Pierce
-contract TransactionRelay is IRelay {
+contract TransactionRelay {
     address payable public owner; // The account which deployed this contract
     string public coinSymbol; // The symbol of the coin used in this contract ('ETH', 'USDC', 'MATIC', etc.)
     uint16 public basisPointFee; // The fee for using this contract in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
 
     mapping(address => EscrowStructs.Relay[]) public relays;
     mapping(address => uint) public accountBalances;
+
+    event RelayCreated(address indexed _creator, uint indexed _agreementIndex, address _buyer, address _seller);
+    event FundsDeposited(address indexed _creator, uint indexed _agreementIndex, uint amountDeposited, uint currentBalance, uint requiredBalance);
+    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
+    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
+    event RelayLocked(address indexed _creator, uint indexed _agreementIndex);
+    event RelayApproved(address indexed _creator, uint indexed _agreementIndex);
+    event RelayReturned(address indexed _creator, uint indexed _agreementIndex);
+
 
     constructor(string memory _symbol, uint16 _basisPointFee) {
         require(_basisPointFee <= 10000, "TransactionRelay: basis point fee must be less than or equal to 10000 (100%)");
@@ -21,7 +30,7 @@ contract TransactionRelay is IRelay {
         basisPointFee = _basisPointFee;
     }
 
-    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter) external override {
+    function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter) external {
         require(msg.sender == _payer || msg.sender == _payee, "TransactionRelay: only the payer or payee can create a relay");
         require(_payer != _payee, "TransactionRelay: payer and payee must be different addresses");
         require(_requiredBalance > 0, "TransactionRelay: required balance must be greater than 0");
@@ -41,7 +50,7 @@ contract TransactionRelay is IRelay {
                 isLocked: false,
                 isReturning: false,
                 isApproved: false,
-                automaticallyApprovedAt: _automaticallyUnlockAt,
+                automaticallyUnlockAt: _automaticallyUnlockAt,
                 allowReturnAfter: _allowReturnAfter
             })
         );
@@ -50,22 +59,22 @@ contract TransactionRelay is IRelay {
     }
 
     // Returns information about the agreement
-    function getRelayActors(address _creator, uint _index) external view override returns (address, address, address, bool) {
+    function getRelayActors(address _creator, uint _index) external view returns (address, address, address, bool) {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         return (relay.payer, relay.payee, relay.creator, relay.initialized);
     }
 
-    function getRelayBalances(address _creator, uint _index) external view override returns (uint, uint, bool) {
+    function getRelayBalances(address _creator, uint _index) external view returns (uint, uint, bool) {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         return (relay.requiredBalance, relay.currentBalance, relay.initialized);
     }
 
-    function getRelayState(address _creator, uint _index) external view override returns (bool, bool, bool, uint, uint, bool) {
+    function getRelayState(address _creator, uint _index) external view returns (bool, bool, bool, uint, uint, bool) {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         return (relay.isLocked, relay.isReturning, relay.isApproved, relay.automaticallyUnlockAt, relay.allowReturnAfter, relay.initialized);
     }
 
-    function depositFunds(address _creator, uint _index) external override payable {
+    function depositFunds(address _creator, uint _index) external payable {
         require(msg.value > 0, "TransactionRelay: deposit amount must be greater than 0");
         require(relays[_creator][_index].payer == msg.sender, "TransactionRelay: Only the payer can deposit funds");
         relays[_creator][_index].currentBalance += msg.value;
@@ -73,7 +82,7 @@ contract TransactionRelay is IRelay {
         emit FundsDeposited(_creator, _index, msg.value, relays[_creator][_index].currentBalance, relays[_creator][_index].requiredBalance);
     }
 
-    function stashFunds(address _creator, uint _index) external override {
+    function stashFunds(address _creator, uint _index) external {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
         uint amount = relay.currentBalance;
@@ -89,7 +98,7 @@ contract TransactionRelay is IRelay {
         emit FundsStashed(_creator, _index, amount, relay.currentBalance, accountBalances[msg.sender]);
     }
 
-    function withdrawFunds(address _creator, uint _index, uint _amount) external override {
+    function withdrawFunds(address _creator, uint _index, uint _amount) external {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
         _validateWithdrawal(_creator, _index, _amount);
@@ -104,7 +113,7 @@ contract TransactionRelay is IRelay {
         emit FundsWithdrawn(_creator, _index, _amount, relay.currentBalance, relay.requiredBalance);
     }
 
-    function lockRelay(address _creator, uint _index) external override {
+    function lockRelay(address _creator, uint _index) external {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
         require(relay.isLocked == false, "TransactionRelay: relay is already locked");
@@ -116,7 +125,7 @@ contract TransactionRelay is IRelay {
         emit RelayLocked(_creator, _index);
     }
 
-    function approveRelay(address _creator, uint _index) external override {
+    function approveRelay(address _creator, uint _index) external {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
         require(relay.payer == msg.sender, "TransactionRelay: only the payer can approve the relay");
@@ -129,7 +138,7 @@ contract TransactionRelay is IRelay {
         emit RelayApproved(_creator, _index);
     }
 
-    function returnRelay(address _creator, uint _index) external override {
+    function returnRelay(address _creator, uint _index) external {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         require(relay.isLocked == true, "TransactionRelay: can only return funds if locked");
         require(relay.isApproved == false, "TransactionRelay: can not return funds if already approved");
@@ -147,6 +156,10 @@ contract TransactionRelay is IRelay {
         relays[_creator][_index].isReturning = true;
 
         emit RelayReturned(_creator, _index);
+    }
+
+    function isDisputable() external pure returns (bool) {
+        return false; // This contract does not support disputable relays
     }
 
     /* Private functions */

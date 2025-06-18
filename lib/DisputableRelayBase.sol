@@ -32,7 +32,8 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
             Dispute({
                 moderator: _moderator,
                 basisPointFee: _moderatorBasisPointFee,
-                isDisputed: false
+                isDisputed: false,
+                isResolved: false
             })
         );
 
@@ -47,7 +48,7 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
                 isLocked: false,
                 isReturning: false,
                 isApproved: false,
-                automaticallyApprovedAt: _automaticallyUnlockAt,
+                automaticallyUnlockAt: _automaticallyUnlockAt,
                 allowReturnAfter: _allowReturnAfter
             })
         );

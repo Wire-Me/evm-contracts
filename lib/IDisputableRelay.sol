@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import {IRelay} from "./IRelay.sol";
 
 /// @author Ian Pierce
-interface IDisputableRelay is IRelay {
+interface IDisputableRelay {
     struct Dispute {
         /// @notice The address of the account which will moderate the dispute
         address moderator;

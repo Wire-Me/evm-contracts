@@ -74,7 +74,7 @@ abstract contract RelayBase is IRelay {
 
     function returnRelay(address _creator, uint _index) external virtual override;
 
-    function _calculateBasisPointProportion(uint _amount, uint basisPoints) internal view returns (uint) {
+    function _calculateBasisPointProportion(uint _amount, uint basisPoints) internal pure returns (uint) {
         return (_amount * basisPoints) / 10000;
     }
 
