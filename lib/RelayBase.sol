@@ -1,7 +1,10 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
 
 import "./EscrowStructs.sol";
 import {IRelay} from "./IRelay.sol";
 
+/// @author Ian Pierce
 abstract contract RelayBase is IRelay {
     address payable public owner; // The account which deployed this contract
     string public coinSymbol; // The symbol of the coin used in this contract ('ETH', 'USDC', 'MATIC', etc.)
@@ -45,9 +48,11 @@ abstract contract RelayBase is IRelay {
     }
 
     function depositFunds(address _creator, uint _index) external override payable {
-        require(msg.value == relays[_creator][_index].requiredBalance, "TransactionRelay: deposit amount must equal the required balance");
-        relays[_creator][_index].currentBalance += msg.value;
-        relays[_creator][_index].isLocked = true; // Lock the relay after deposit
+        EscrowStructs.Relay storage relay = relays[_creator][_index];
+
+        require(msg.value == relay.requiredBalance, "TransactionRelay: deposit amount must equal the required balance");
+        relay.currentBalance += msg.value;
+        relay.isLocked = true; // Lock the relay after deposit
 
         emit FundsDeposited(_creator, _index, msg.value, relays[_creator][_index].currentBalance, relays[_creator][_index].requiredBalance);
     }

@@ -1,16 +1,13 @@
-import "./EscrowStructs.sol";
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
+import {RelayBase} from "./RelayBase.sol";
 import {IRelay} from "./IRelay.sol";
 import {IDisputableRelay} from "./IDisputableRelay.sol";
-import {RelayBase} from "./RelayBase.sol";
+import {EscrowStructs} from "./EscrowStructs.sol";
 
+/// @author Ian Pierce
 abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
-    address payable public owner; // The account which deployed this contract
-    string public coinSymbol; // The symbol of the coin used in this contract ('ETH', 'USDC', 'MATIC', etc.)
-    uint public basisPointFee; // The fee for using this contract in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
-
-    mapping(address => EscrowStructs.Relay[]) public relays;
-    mapping(address => uint) public accountBalances;
-
     /// @notice Contains the dispute configuration for each relay
     mapping(address => Dispute[]) public disputes;
     /// @notice Contains the distribution tables for a relay if a dispute has been initiated.
@@ -32,11 +29,11 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
         require(_automaticallyUnlockAt > _allowReturnAfter, "TransactionRelay: automatically approved at timestamp must be after allow return after timestamp");
 
         disputes[msg.sender].push(
-         Dispute({
-            moderator: _moderator,
-            basisPointFee: _moderatorBasisPointFee,
-            isDisputed: false
-         })
+            Dispute({
+                moderator: _moderator,
+                basisPointFee: _moderatorBasisPointFee,
+                isDisputed: false
+            })
         );
 
         relays[msg.sender].push(
@@ -108,14 +105,15 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
 
         _validateWithdrawal(_creator, _index);
 
-        uint amountOfFundsStashed = _calculateAmountOwed(_creator, _index);
+        (uint amountOwed, uint platformFee) = _calculateAmountAndFeeOwed(_creator, _index);
 
-        accountBalances[msg.sender] += amountOfFundsStashed;
+        // Add the amount owed to the account balance of the stasher
+        accountBalances[msg.sender] += amountOwed;
         // Adds fee to the owner's account balance
-        accountBalances[owner] += (relay.currentBalance - amountOfFundsStashed);
-        relay.currentBalance = 0;
+        accountBalances[owner] += platformFee;
+        relay.currentBalance -= (amountOwed + platformFee);
 
-        emit FundsStashed(_creator, _index, amountOfFundsStashed, relay.currentBalance, accountBalances[msg.sender]);
+        emit FundsStashed(_creator, _index, (amountOwed + platformFee), amountOwed, platformFee);
     }
 
     function withdrawFunds(address _creator, uint _index) external virtual override {
@@ -123,32 +121,32 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
 
         _validateWithdrawal(_creator, _index);
 
-        uint amountOfFundsWithdrawn = _calculateAmountOwed(_creator, _index);
+        (uint amountOwed, uint platformFee) = _calculateAmountAndFeeOwed(_creator, _index);
 
-        relay.currentBalance -= amount;
-        // Adds fee to the owner's account balance
-        accountBalances[owner] += (amount - amountOfFundsWithdrawn);
-        payable(msg.sender).transfer(amountOfFundsWithdrawn);
+        relay.currentBalance -= (amountOwed + platformFee);
+        // Adds platform fee to the owner's account balance
+        accountBalances[owner] += platformFee;
+        payable(msg.sender).transfer(amountOwed);
 
-        emit FundsWithdrawn(_creator, _index, amount, relay.currentBalance, relay.requiredBalance);
+        emit FundsWithdrawn(_creator, _index, (amountOwed + platformFee), amountOwed, platformFee);
     }
 
-    function _calculateAmountOwed(address _creator, uint _index, uint _amount) private view returns (uint) {
+    function _calculateAmountAndFeeOwed(address _creator, uint _index) private view returns (uint, uint) {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         Dispute storage dispute = disputes[_creator][_index];
-        uint amountOfFundsWithdrawn = _amount;
+        uint platformFee = 0;
+        uint grossAmount = 0;
 
-        // If the relay is not locked, the full amount can be withdrawn
         if (!dispute.isDisputed && relay.isLocked && (relay.isReturning || relay.isApproved)) {
-            uint fee = _calculateBasisPointProportion(_amount, basisPointFee);
-            amountOfFundsWithdrawn = _amount - fee;
-        } else if (dispute.isDisputed) {
-            uint moderatorAmountOwed = _calculateBasisPointProportion(_amount, disputes[_creator][_index].basisPointFee);
-        } else {
-            revert("TransactionRelay: can not withdraw funds if relay isn't locked or disputed");
+            platformFee = _calculateBasisPointProportion(relay.currentBalance, basisPointFee);
+            grossAmount = relay.currentBalance - platformFee;
+        } else if (dispute.isDisputed && dispute.isResolved) {
+            uint moderatorAmountOwed = _calculateBasisPointProportion(relay.currentBalance, disputes[_creator][_index].basisPointFee);
+            grossAmount = _calculateBasisPointProportion(relay.currentBalance - moderatorAmountOwed, distributionTables[_creator][_index][msg.sender]);
+            platformFee = _calculateBasisPointProportion(grossAmount, basisPointFee);
         }
 
-        return amountOfFundsWithdrawn;
+        return (grossAmount, platformFee);
     }
 
     /// @notice Validates the withdrawal of funds from the relay.
@@ -167,8 +165,9 @@ abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
                 require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and approved)");
             } else if (dispute.isDisputed) {
                 require(dispute.isResolved, "TransactionRelay: dispute must be resolved before withdrawal");
+                require(msg.sender == dispute.moderator || msg.sender == relay.payer || msg.sender == relay.payee, "TransactionRelay: only the moderator and participants can withdraw funds if disputed");
             } else {
-                require(_isPassedAutomaticUnlockTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed automatic approval time");
+                require(_isPassedAutomaticUnlockTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed automatic unlock time");
                 require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and not approved)");
             }
         } else {

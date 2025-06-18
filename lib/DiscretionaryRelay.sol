@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 import "./EscrowStructs.sol";
 import {UndisputableRelayBase} from "./UndisputableRelayBase.sol";
 
+/// @author Ian Pierce
 contract DiscretionaryRelay is UndisputableRelayBase {
     constructor(string memory _symbol, uint _basisPointFee) UndisputableRelayBase(_symbol, _basisPointFee) {}
 

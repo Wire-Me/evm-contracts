@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 import {IRelay} from "./IRelay.sol";
 
+/// @author Ian Pierce
 interface IUndisputableRelay is IRelay {
     /// @notice Creates a new relay agreement between two parties.
     /// ---

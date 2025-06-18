@@ -1,4 +1,7 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
 
+/// @author Ian Pierce
 library EscrowStructs {
     struct Relay {
         /// @notice the address of the buyer's account

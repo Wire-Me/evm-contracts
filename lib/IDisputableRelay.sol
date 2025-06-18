@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 import {IRelay} from "./IRelay.sol";
 
+/// @author Ian Pierce
 interface IDisputableRelay is IRelay {
     struct Dispute {
         /// @notice The address of the account which will moderate the dispute
@@ -25,8 +29,8 @@ interface IDisputableRelay is IRelay {
     /// @dev _automaticallyApprovedAt - For conditional relays this is the refund deadline, and for guaranteed relays this is the completion date.
     /// @param _allowReturnAfter The epoch timestamp (seconds) after which the relay can be refunded. (funds are able to be withdrawn by the payer).
     /// @dev _allowReturnAfter - For conditional relays this is the completion date, and for guaranteed relays this must be zero (guaranteed relays can be returned at any time).
-    /// @param moderator The address of the moderator who will handle disputes for this relay.
-    /// @param moderatorBasisPointFee The fee going to the moderator in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%).
+    /// @param _moderator The address of the moderator who will handle disputes for this relay.
+    /// @param _moderatorBasisPointFee The fee going to the moderator in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%).
     /// ---
     /// @custom:revert If the payer is the zero address, or if the payee is the zero address, or if the required balance is zero.
     /// @custom:revert If the moderator is the zero address, or if the moderator basis point fee is zero.

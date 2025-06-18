@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 import "./EscrowStructs.sol";
 import {DisputableRelayBase} from "./DisputableRelayBase.sol";
 
+/// @author Ian Pierce
 contract ModeratedRelay is DisputableRelayBase {
     constructor(string memory _symbol, uint _basisPointFee) DisputableRelayBase(_symbol, _basisPointFee) {}
 

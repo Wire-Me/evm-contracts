@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 import "./EscrowStructs.sol";
 import {IRelay} from "./IRelay.sol";
 import {IUndisputableRelay} from "./IUndisputableRelay.sol";
 import {RelayBase} from "./RelayBase.sol";
 
+/// @author Ian Pierce
 abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
     constructor(string memory _symbol, uint _basisPointFee) RelayBase(_symbol, _basisPointFee) {}
 
@@ -41,33 +45,35 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
     function stashFunds(address _creator, uint _index) external virtual override {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
-        uint amount = relay.currentBalance;
-        _validateWithdrawal(_creator, _index, amount);
+        _validateWithdrawal(_creator, _index);
 
-        uint amountOfFundsStashed = _calculateAmountWithdrawn(_creator, _index, amount);
+        (uint amountOwed, uint platformFee) = _calculateAmountWithdrawn(_creator, _index);
 
-        accountBalances[msg.sender] += amountOfFundsStashed;
+        // subtract the amount owed and platform fee from the relay's current balance
+        relay.currentBalance -= (amountOwed + platformFee);
         // Adds fee to the owner's account balance
-        accountBalances[owner] += (amount - amountOfFundsStashed);
-        relay.currentBalance = 0;
+        accountBalances[owner] += platformFee;
+        // Adds the amount owed to the payer's account balance
+        accountBalances[msg.sender] += amountOwed;
 
-        emit FundsStashed(_creator, _index, amount, relay.currentBalance, accountBalances[msg.sender]);
+        emit FundsStashed(_creator, _index, (amountOwed + platformFee), amountOwed, platformFee);
     }
 
     function withdrawFunds(address _creator, uint _index) external virtual override {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
-        uint amount = relay.currentBalance;
 
-        _validateWithdrawal(_creator, _index, amount);
+        _validateWithdrawal(_creator, _index);
 
-        uint amountOfFundsWithdrawn = _calculateAmountWithdrawn(_creator, _index, amount);
+        (uint amountOwed, uint platformFee) = _calculateAmountWithdrawn(_creator, _index);
 
-        relay.currentBalance -= amount;
+        // subtract the amount owed and platform fee from the relay's current balance
+        relay.currentBalance -= (amountOwed + platformFee);
         // Adds fee to the owner's account balance
-        accountBalances[owner] += (amount - amountOfFundsWithdrawn);
-        payable(msg.sender).transfer(amountOfFundsWithdrawn);
+        accountBalances[owner] += platformFee;
+        // transfer the sender the amount owed
+        payable(msg.sender).transfer(amountOwed);
 
-        emit FundsWithdrawn(_creator, _index, amount, relay.currentBalance, relay.requiredBalance);
+        emit FundsWithdrawn(_creator, _index, (amountOwed + platformFee), amountOwed, platformFee);
     }
 
     /// @notice Validates the withdrawal of funds from the relay.
@@ -75,9 +81,8 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
     /// @custom:revert If the relay is locked & returning only the payer can withdraw funds & _amount must equal the current balance. Reverts otherwise.
     /// @custom:revert If the relay is locked & approved only the payee can withdraw funds & _amount must equal the current balance. Reverts otherwise.
     /// @custom:revert If the relay is locked & not approved only the payee can withdraw funds & it must be passed the automatic approval timestamp. Reverts otherwise.
-    function _validateWithdrawal(address _creator, uint _index, uint _amount) internal view {
+    function _validateWithdrawal(address _creator, uint _index) internal view {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
-        require(relay.currentBalance == _amount, "TransactionRelay: can not withdraw partial funds, must be full amount");
 
         if (relay.isLocked) {
             if (relay.isReturning) {
@@ -93,16 +98,17 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
         }
     }
 
-    function _calculateAmountWithdrawn(address _creator, uint _index, uint _amount) private view returns (uint) {
+    function _calculateAmountWithdrawn(address _creator, uint _index) private view returns (uint, uint) {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
-        uint amountOfFundsWithdrawn = _amount;
+        uint platformFee = 0;
+        uint grossAmount = 0;
 
         // If the relay is not locked, the full amount can be withdrawn
         if (relay.isLocked && (relay.isReturning || relay.isApproved)) {
-            uint fee = _calculateBasisPointProportion(_amount, basisPointFee);
-            amountOfFundsWithdrawn = _amount - fee;
+            platformFee = _calculateBasisPointProportion(relay.currentBalance, basisPointFee);
+            grossAmount = relay.currentBalance - platformFee;
         }
 
-        return amountOfFundsWithdrawn;
+        return (grossAmount, platformFee);
     }
 }

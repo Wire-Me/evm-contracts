@@ -5,8 +5,8 @@ pragma solidity ^0.8.23;
 interface IRelay {
     event RelayCreated(address indexed _creator, uint indexed _agreementIndex, address _buyer, address _seller);
     event FundsDeposited(address indexed _creator, uint indexed _agreementIndex, uint amountDeposited, uint currentBalance, uint requiredBalance);
-    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint currentBalance, uint requiredBalance);
-    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint amountWithdrawn, uint relayCurrentBalance, uint accountCurrentBalance);
+    event FundsWithdrawn(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
+    event FundsStashed(address indexed _creator, uint indexed _agreementIndex, uint principleAmount, uint grossAmount, uint platformFee);
     event RelayLocked(address indexed _creator, uint indexed _agreementIndex);
     event RelayApproved(address indexed _creator, uint indexed _agreementIndex);
     event RelayReturned(address indexed _creator, uint indexed _agreementIndex);
