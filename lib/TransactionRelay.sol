@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import "./EscrowStructs.sol";
 import {IRelay} from "./IRelay.sol";
 
+/// @dev This is deprecated. Use DiscretionaryRelay or TimeLockRelay instead.
 /// @author Ian Pierce
 contract TransactionRelay {
     address payable public owner; // The account which deployed this contract
