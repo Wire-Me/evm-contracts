@@ -14,20 +14,20 @@ contract SimplePaymaster {
     }
 
     function validatePaymasterUserOp(
-        UserOperationLib.UserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 maxCost
-    ) external returns (bytes memory context, uint256 validationData) {
+        UserOperationLib.UserOperation calldata /*userOp*/,
+        bytes32 /*userOpHash*/,
+        uint256 /*maxCost*/
+    ) external view returns (bytes memory context, uint256 validationData) {
         require(msg.sender == address(entryPoint), "Only EntryPoint");
         // Accept everything for now
         return ("", 0); // context, validationData = 0 (valid)
     }
 
     function postOp(
-        uint8 mode,
-        bytes calldata context,
-        uint256 actualGasCost
-    ) external {
+        uint8 /*mode*/,
+        bytes calldata /*context*/,
+        uint256 /*actualGasCost*/
+    ) external view {
         require(msg.sender == address(entryPoint), "Only EntryPoint");
         // optionally reimburse self here
     }
