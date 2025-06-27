@@ -37,8 +37,8 @@ contract SwapEscrow {
     receive() external payable {
         escrows[msg.sender].push(
             Escrow({
-                payer: msg.sender,
-                payee: address(0),
+                sender: msg.sender,
+                receiver: address(0),
                 initialized: true,
                 requiredBalance: msg.value,
                 isReturning: false,
