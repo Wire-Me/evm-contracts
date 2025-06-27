@@ -28,3 +28,24 @@ To Sepolia
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Lock.ts --network sepolia
 ```
+
+# Testing
+
+## Setup
+
+Install Foundry
+
+```bash
+# Download foundry installer `foundryup`
+curl -L https://foundry.paradigm.xyz | bash
+# Install forge, cast, anvil, chisel
+foundryup
+```
+
+## Run Tests
+
+Run the Foundry unit tests using the following command:
+
+```bash
+forge test
+```
