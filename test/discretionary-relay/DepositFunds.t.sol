@@ -16,12 +16,12 @@ contract DiscretionaryRelayDepositFundsTest is DiscretionaryRelayTest {
     function setUp() public override {
         DiscretionaryRelayTest.setUp(); // Call the setup from the base test contract
         // Create the relay
-        createDiscretionaryRelay(
+        _createDiscretionaryRelay(
             requiredAmount,
             alice,
             bob,
-            getUnlockAt(),
-            getReturnAfter(),
+            _getUnlockAt(),
+            _getReturnAfter(),
             alice
         );
     }
@@ -44,8 +44,8 @@ contract DiscretionaryRelayDepositFundsTest is DiscretionaryRelayTest {
         assertTrue(isLocked2); // The relay should be locked after deposit
         assertFalse(isReturning2);
         assertFalse(isApproved2);
-        assertEq(automaticallyUnlockAt2, getUnlockAt());
-        assertEq(allowReturnAfter2, getReturnAfter());
+        assertEq(automaticallyUnlockAt2, _getUnlockAt());
+        assertEq(allowReturnAfter2, _getReturnAfter());
         assertTrue(isInitialized5);
     }
 

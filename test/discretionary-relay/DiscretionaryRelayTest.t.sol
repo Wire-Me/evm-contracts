@@ -22,7 +22,7 @@ abstract contract DiscretionaryRelayTest is Test {
         vm.deal(dee, 10_000_000_000_000_000_000);
     }
 
-    function createDiscretionaryRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter, address _creator) public {
+    function _createDiscretionaryRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter, address _creator) internal {
         vm.prank(_creator);
 
         relay.createRelay(
@@ -34,11 +34,11 @@ abstract contract DiscretionaryRelayTest is Test {
         );
     }
 
-    function getUnlockAt() internal view returns (uint) {
+    function _getUnlockAt() internal view returns (uint) {
         return block.timestamp + 10 days;
     }
 
-    function getReturnAfter() internal view returns (uint) {
+    function _getReturnAfter() internal view returns (uint) {
         return block.timestamp + 5 days;
     }
 }

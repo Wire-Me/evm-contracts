@@ -16,12 +16,12 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
     function setUp() public override {
         DiscretionaryRelayTest.setUp(); // Call the setup from the base test contract
         // Create the relay
-        createDiscretionaryRelay(
+        _createDiscretionaryRelay(
             requiredAmount,
             alice,
             bob,
-            getUnlockAt(),
-            getReturnAfter(),
+            _getUnlockAt(),
+            _getReturnAfter(),
             alice
         );
     }
@@ -42,8 +42,8 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
         assertTrue(isLocked);
         assertFalse(isReturning);
         assertTrue(isApproved); // The relay should be approved after approval
-        assertEq(automaticallyUnlockAt, getUnlockAt());
-        assertEq(allowReturnAfter, getReturnAfter());
+        assertEq(automaticallyUnlockAt, _getUnlockAt());
+        assertEq(allowReturnAfter, _getReturnAfter());
         assertTrue(isInitialized);
     }
 
@@ -84,7 +84,7 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
     function testApproveRelayRevertsIfRelayReturning() public {
         _depositFunds();
 
-        vm.warp(getReturnAfter() + 1); // Ensure allowReturnAfter has passed
+        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
         vm.prank(alice);
         relay.returnRelay(alice, 0); // Return the relay first
 

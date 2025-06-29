@@ -26,7 +26,7 @@ contract DiscretionaryRelayCreateRelayTest is DiscretionaryRelayTest {
         vm.expectEmit(true, true, false, true);
         emit IRelay.RelayCreated(alice, 0, alice, bob);
 
-        createDiscretionaryRelay(
+        _createDiscretionaryRelay(
             requiredAmount,
             alice,
             bob,
