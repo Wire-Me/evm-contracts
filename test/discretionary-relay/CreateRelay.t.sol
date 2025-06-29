@@ -1,4 +1,6 @@
-pragma solidity ^0.8.20;
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.23;
+
 
 import "../../lib/IRelay.sol";
 import {CommonBase} from "../../lib/forge-std/src/Base.sol";
@@ -9,17 +11,11 @@ import {StdCheats, StdCheatsSafe} from "../../lib/forge-std/src/StdCheats.sol";
 import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
 import {Test} from "../../lib/forge-std/src/Test.sol";
 import {console} from "../../lib/forge-std/src/console.sol";
+import {DiscretionaryRelayTest} from "./DiscretionaryRelayTest.t.sol";
 
-contract DiscretionaryRelayCreateRelayTest is Test {
-    DiscretionaryRelay public relay;
-    address public alice = address(0xA11CE);
-    address public bob = address(0xB0B);
-    address public dee = address(0xDEE);
-    uint public currentBlockTimestamp = 4102444800; // 2100/01/01 00:00:00 GMT
-
-    function setUp() public {
-        relay = new DiscretionaryRelay("ETH", 100);
-        vm.warp(currentBlockTimestamp); // Set the current block timestamp
+contract DiscretionaryRelayCreateRelayTest is DiscretionaryRelayTest {
+    function setUp() public override {
+        DiscretionaryRelayTest.setUp(); // Call the setup from the base test contract
     }
 
     function testCreateRelayHappyPath() public {
