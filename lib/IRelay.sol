@@ -18,6 +18,7 @@ interface IRelay {
     error ErrPayeeHasZeroAddress();
     error ErrUnlockAtNotInFuture();
     error ErrUnlockAtNotGreaterThanReturnAfter();
+    error ErrDepositAmountNotEqualToRequiredAmount();
 
     /// @notice Gets information about the actors involved in the relay agreement.
     /// ---

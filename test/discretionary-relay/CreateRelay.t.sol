@@ -23,16 +23,16 @@ contract DiscretionaryRelayCreateRelayTest is DiscretionaryRelayTest {
         uint unlockAt = block.timestamp + 10 days;
         uint returnAfter = block.timestamp + 5 days;
 
-        vm.prank(alice);
         vm.expectEmit(true, true, false, true);
         emit IRelay.RelayCreated(alice, 0, alice, bob);
 
-        relay.createRelay(
+        createDiscretionaryRelay(
             requiredAmount,
             alice,
             bob,
             unlockAt,
-            returnAfter
+            returnAfter,
+            alice
         );
 
         (address payer, address payee, address creator, bool isInitialized1) = relay.getRelayActors(alice, 0);

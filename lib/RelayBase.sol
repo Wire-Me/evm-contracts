@@ -50,7 +50,7 @@ abstract contract RelayBase is IRelay {
     function depositFunds(address _creator, uint _index) external override payable {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
-        require(msg.value == relay.requiredBalance, "TransactionRelay: deposit amount must equal the required balance");
+        require(msg.value == relay.requiredBalance, ErrDepositAmountNotEqualToRequiredAmount());
         relay.currentBalance += msg.value;
         relay.isLocked = true; // Lock the relay after deposit
 

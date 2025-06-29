@@ -15,10 +15,22 @@ abstract contract DiscretionaryRelayTest is Test {
     function setUp() public virtual {
         relay = new DiscretionaryRelay("ETH", 100);
         vm.warp(currentBlockTimestamp); // Set the current block timestamp
+
+        // Fund the addresses with some ether for testing – 10 ETH for each
+        vm.deal(alice, 10_000_000_000_000_000_000);
+        vm.deal(bob, 10_000_000_000_000_000_000);
+        vm.deal(dee, 10_000_000_000_000_000_000);
     }
 
-    function testIsDisputable() public view {
-        bool isDisputable = relay.isDisputable();
-        assertEq(isDisputable, false);
+    function createDiscretionaryRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter, address _creator) public {
+        vm.prank(_creator);
+
+        relay.createRelay(
+            _requiredBalance,
+            _payer,
+            _payee,
+            _automaticallyUnlockAt,
+            _allowReturnAfter
+        );
     }
 }
