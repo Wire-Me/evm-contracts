@@ -33,4 +33,12 @@ abstract contract DiscretionaryRelayTest is Test {
             _allowReturnAfter
         );
     }
+
+    function getUnlockAt() internal view returns (uint) {
+        return block.timestamp + 10 days;
+    }
+
+    function getReturnAfter() internal view returns (uint) {
+        return block.timestamp + 5 days;
+    }
 }

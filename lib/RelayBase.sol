@@ -63,9 +63,9 @@ abstract contract RelayBase is IRelay {
 
     function approveRelay(address _creator, uint _index) external virtual override {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
-        require(relay.isLocked, "TimeLockRelay: relay must be locked before approval");
-        require(msg.sender == relay.payer, "TimeLockRelay: only the payer can approve the relay");
-        require(!relay.isApproved && !relay.isReturning, "TimeLockRelay: relay is already approved or returned");
+        require(relay.isLocked, ErrRelayNotLocked());
+        require(msg.sender == relay.payer, ErrSenderNotPayer());
+        require(!relay.isApproved && !relay.isReturning, ErrRelayCanNotBeApprovedOrReturned());
 
         relay.isApproved = true;
 

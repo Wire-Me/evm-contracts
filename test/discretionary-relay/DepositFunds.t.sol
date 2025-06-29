@@ -13,7 +13,6 @@ import {DiscretionaryRelayTest} from "./DiscretionaryRelayTest.t.sol";
 contract DiscretionaryRelayDepositFundsTest is DiscretionaryRelayTest {
     uint public requiredAmount = 1_000_000_000_000_000_000; // 1 ETH in wei
 
-
     function setUp() public override {
         DiscretionaryRelayTest.setUp(); // Call the setup from the base test contract
         // Create the relay
@@ -54,13 +53,5 @@ contract DiscretionaryRelayDepositFundsTest is DiscretionaryRelayTest {
         vm.prank(alice);
         vm.expectRevert(IRelay.ErrDepositAmountNotEqualToRequiredAmount.selector);
         relay.depositFunds{value: requiredAmount + 1}(alice, 0);
-    }
-
-    function getUnlockAt() private view returns (uint) {
-        return block.timestamp + 10 days;
-    }
-
-    function getReturnAfter() private view returns (uint) {
-        return block.timestamp + 5 days;
     }
 }
