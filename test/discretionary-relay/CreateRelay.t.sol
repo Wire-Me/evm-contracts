@@ -8,38 +8,53 @@ import {StdChains} from "../../lib/forge-std/src/StdChains.sol";
 import {StdCheats, StdCheatsSafe} from "../../lib/forge-std/src/StdCheats.sol";
 import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
 import {Test} from "../../lib/forge-std/src/Test.sol";
+import {console} from "../../lib/forge-std/src/console.sol";
 
 contract DiscretionaryRelayCreateRelayTest is Test {
     DiscretionaryRelay public relay;
     address public alice = address(0xA11CE);
     address public bob = address(0xB0B);
     address public dee = address(0xDEE);
+    uint public currentBlockTimestamp = 4102444800; // 2100/01/01 00:00:00 GMT
 
     function setUp() public {
         relay = new DiscretionaryRelay("ETH", 100);
+        vm.warp(currentBlockTimestamp); // Set the current block timestamp
     }
 
     function testCreateRelayHappyPath() public {
-        uint requiredBalance = 1_000_000_000_000_000_000; // 1 ETH in wei
+        uint requiredAmount = 1_000_000_000_000_000_000; // 1 ETH in wei
         uint unlockAt = block.timestamp + 10 days;
-        uint allowReturnAfter = block.timestamp + 5 days;
+        uint returnAfter = block.timestamp + 5 days;
+
         vm.prank(alice);
         vm.expectEmit(true, true, false, true);
         emit IRelay.RelayCreated(alice, 0, alice, bob);
 
         relay.createRelay(
-            requiredBalance,
+            requiredAmount,
             alice,
             bob,
             unlockAt,
-            allowReturnAfter
+            returnAfter
         );
 
-        (address payer, address payee, address creator, bool initialized) = relay.getRelayActors(alice, 0);
+        (address payer, address payee, address creator, bool isInitialized1) = relay.getRelayActors(alice, 0);
         assertEq(payer, alice);
         assertEq(payee, bob);
         assertEq(creator, alice);
-        assertTrue(initialized);
+        assertTrue(isInitialized1);
+        (uint requiredBalance, uint currentBalance, bool isInitialized2 ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount);
+        assertEq(currentBalance, 0);
+        assertTrue(isInitialized2);
+        (bool isLocked, bool isReturning, bool isApproved, uint automaticallyUnlockAt, uint allowReturnAfter, bool isInitialized3) = relay.getRelayState(alice, 0);
+        assertFalse(isLocked);
+        assertFalse(isReturning);
+        assertFalse(isApproved);
+        assertEq(unlockAt, automaticallyUnlockAt);
+        assertEq(returnAfter, allowReturnAfter);
+        assertTrue(isInitialized3);
     }
 
     function testCreateRelayRevertsWhenPayerAndPayeeAreSame() public {
@@ -123,8 +138,6 @@ contract DiscretionaryRelayCreateRelayTest is Test {
     }
 
     function testCreateRelayRevertsWhenAutomaticallyApprovedAtInPast() public {
-        uint currentTimestamp = 4102444800; // 2100/01/01 00:00:00 GMT
-        vm.warp(currentTimestamp); // Set the current block timestamp
         uint requiredBalance = 1_000_000_000_000_000_000; // 1 ETH in wei
         uint unlockAt = 946684800; // In the past – 2000/01/01 00:00:00 GMT
         uint allowReturnAfter = block.timestamp + 5 days;
