@@ -11,13 +11,13 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
     constructor(string memory _symbol, uint _basisPointFee) RelayBase(_symbol, _basisPointFee) {}
 
     function createRelay(uint _requiredBalance, address _payer, address _payee, uint _automaticallyUnlockAt, uint _allowReturnAfter) public virtual override {
-        require(msg.sender == _payer || msg.sender == _payee, "TransactionRelay: only the payer or payee can create a relay");
-        require(_payer != _payee, "TransactionRelay: payer and payee must be different addresses");
-        require(_requiredBalance > 0, "TransactionRelay: required balance must be greater than 0");
-        require(_payer != address(0), "TransactionRelay: payer address must not be 0x0");
-        require(_payee != address(0), "TransactionRelay: payee address must not be 0x0");
-        require(_automaticallyUnlockAt > block.timestamp, "TransactionRelay: automatically approved at timestamp must be in the future");
-        require(_automaticallyUnlockAt > _allowReturnAfter, "TransactionRelay: automatically approved at timestamp must be after allow return after timestamp");
+        require(msg.sender == _payer || msg.sender == _payee, ErrSenderNotPayerOrPayee());
+        require(_payer != _payee, ErrPayerEqualsPayee());
+        require(_requiredBalance > 0, ErrRequiredBalanceNotGreaterThanZero());
+        require(_payer != address(0), ErrPayerHasZeroAddress());
+        require(_payee != address(0), ErrPayeeHasZeroAddress());
+        require(_automaticallyUnlockAt > block.timestamp, ErrUnlockAtNotInFuture());
+        require(_automaticallyUnlockAt > _allowReturnAfter, ErrUnlockAtNotGreaterThanReturnAfter());
 
         relays[msg.sender].push(
             EscrowStructs.Relay({

@@ -11,6 +11,14 @@ interface IRelay {
     event RelayApproved(address indexed _creator, uint indexed _agreementIndex);
     event RelayReturned(address indexed _creator, uint indexed _agreementIndex);
 
+    error ErrSenderNotPayerOrPayee();
+    error ErrPayerEqualsPayee();
+    error ErrRequiredBalanceNotGreaterThanZero();
+    error ErrPayerHasZeroAddress();
+    error ErrPayeeHasZeroAddress();
+    error ErrUnlockAtNotInFuture();
+    error ErrUnlockAtNotGreaterThanReturnAfter();
+
     /// @notice Gets information about the actors involved in the relay agreement.
     /// ---
     /// @param _creator The address of the account which created the agreement.
