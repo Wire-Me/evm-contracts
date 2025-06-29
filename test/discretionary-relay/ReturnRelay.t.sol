@@ -10,7 +10,7 @@ import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
 import {DiscretionaryRelayTest} from "./DiscretionaryRelayTest.t.sol";
 
 
-contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
+contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
     uint public requiredAmount = 1_000_000_000_000_000_000; // 1 ETH in wei
 
     function setUp() public override {
@@ -26,22 +26,23 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
         );
     }
 
-    function testApproveRelayHappyPath() public {
+    function testReturnRelayHappyPath() public {
         _depositFunds();
 
+        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
         vm.prank(alice);
         // Expect the RelayApproved event to be emitted
         vm.expectEmit(true, true, false, false);
-        emit IRelay.RelayApproved(alice, 0);
+        emit IRelay.RelayReturned(alice, 0);
         // Alice approves the relay
-        relay.approveRelay(
+        relay.returnRelay(
             alice,
             0
         );
         (bool isLocked, bool isReturning, bool isApproved, uint automaticallyUnlockAt, uint allowReturnAfter, bool isInitialized) = relay.getRelayState(alice, 0);
         assertTrue(isLocked);
-        assertFalse(isReturning);
-        assertTrue(isApproved); // The relay should be approved after approval
+        assertTrue(isReturning);
+        assertFalse(isApproved); // The relay should be approved after approval
         assertEq(automaticallyUnlockAt, _getUnlockAt());
         assertEq(allowReturnAfter, _getReturnAfter());
         assertTrue(isInitialized);
@@ -50,13 +51,13 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
     function testApproveRelayRevertsIfRelayNotLocked() public {
         vm.prank(alice);
         vm.expectRevert(IRelay.ErrRelayNotLocked.selector);
-        relay.approveRelay(
+        relay.returnRelay(
             alice,
             0
         );
     }
 
-    function testApproveRelayRevertsIfRelayAlreadyApproved() public {
+    function testReturnRelayRevertsIfRelayAlreadyApproved() public {
         _depositFunds();
 
         vm.prank(alice);
@@ -64,24 +65,25 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
 
         vm.prank(alice);
         vm.expectRevert(IRelay.ErrRelayAlreadyApprovedOrReturned.selector);
-        relay.approveRelay(
+        relay.returnRelay(
             alice,
             0
         );
     }
 
-    function testApproveRelayRevertsIfSenderNotPayer() public {
+    function testReturnRelayRevertsIfSenderNotPayer() public {
         _depositFunds();
 
         vm.prank(bob); // Bob tries to approve the relay
+        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
         vm.expectRevert(IRelay.ErrSenderNotPayer.selector);
-        relay.approveRelay(
+        relay.returnRelay(
             alice,
             0
         );
     }
 
-    function testApproveRelayRevertsIfAlreadyReturned() public {
+    function testReturnRelayRevertsIfRelayAlreadyReturned() public {
         _depositFunds();
 
         vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
@@ -90,7 +92,19 @@ contract DiscretionaryRelayApproveRelayTest is DiscretionaryRelayTest {
 
         vm.prank(alice);
         vm.expectRevert(IRelay.ErrRelayAlreadyApprovedOrReturned.selector);
-        relay.approveRelay(
+        relay.returnRelay(
+            alice,
+            0
+        );
+    }
+
+    function testReturnRelayRevertsIfAllowReturnAfterNotPassed() public {
+        _depositFunds();
+
+        vm.warp(_getReturnAfter() - 1); // Ensure allowReturnAfter has not passed
+        vm.prank(alice);
+        vm.expectRevert(IRelay.ErrNotAfterAllowReturnTimestamp.selector);
+        relay.returnRelay(
             alice,
             0
         );

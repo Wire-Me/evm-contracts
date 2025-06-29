@@ -35,10 +35,10 @@ abstract contract DiscretionaryRelayTest is Test {
     }
 
     function _getUnlockAt() internal view returns (uint) {
-        return block.timestamp + 10 days;
+        return currentBlockTimestamp + 10 days;
     }
 
     function _getReturnAfter() internal view returns (uint) {
-        return block.timestamp + 5 days;
+        return currentBlockTimestamp + 5 days;
     }
 }

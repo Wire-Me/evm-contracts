@@ -65,7 +65,7 @@ abstract contract RelayBase is IRelay {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
         require(relay.isLocked, ErrRelayNotLocked());
         require(msg.sender == relay.payer, ErrSenderNotPayer());
-        require(!relay.isApproved && !relay.isReturning, ErrRelayCanNotBeApprovedOrReturned());
+        require(!relay.isApproved && !relay.isReturning, ErrRelayAlreadyApprovedOrReturned());
 
         relay.isApproved = true;
 
