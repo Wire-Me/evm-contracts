@@ -34,7 +34,7 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
         // Expect the RelayApproved event to be emitted
         vm.expectEmit(true, true, false, false);
         emit IRelay.RelayReturned(alice, 0);
-        // Alice approves the relay
+        // Alice returns the relay
         relay.returnRelay(
             alice,
             0
@@ -74,8 +74,16 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
     function testReturnRelayRevertsIfSenderNotPayer() public {
         _depositFunds();
 
-        vm.prank(bob); // Bob tries to approve the relay
         vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
+
+        vm.prank(bob);
+        vm.expectRevert(IRelay.ErrSenderNotPayer.selector);
+        relay.returnRelay(
+            alice,
+            0
+        );
+
+        vm.prank(dee);
         vm.expectRevert(IRelay.ErrSenderNotPayer.selector);
         relay.returnRelay(
             alice,
