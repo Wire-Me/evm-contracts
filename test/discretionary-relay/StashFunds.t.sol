@@ -44,8 +44,8 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
         uint expectedPayeeAmount = requiredAmount - expectedPlatformFee;
-        // Expect the RelayApproved event to be emitted
-        vm.expectEmit(true, true, false, false);
+        // Expect the event to be emitted
+        vm.expectEmit(true, true, false, true);
         emit IRelay.FundsStashed(alice, 0, requiredAmount, expectedPayeeAmount, expectedPlatformFee);
 
         // Payee stashes funds
@@ -58,6 +58,10 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payee
         uint accountBalance = relay.accountBalances(bob);
         assertEq(accountBalance, expectedPayeeAmount, "Payee's account balance should match the expected amount");
+
+        // Check the account balance of the contract owner
+        uint ownerAccountBalance = relay.accountBalances(owner);
+        assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
     }
 
     function testStashFundsAfterReturnHappyPath() public {
@@ -71,15 +75,15 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
             0
         );
 
-        // Payee's account balance should be zero before stashing
+        // Payer's account balance should be zero before stashing
         uint accountBalanceBeforeStash = relay.accountBalances(alice);
         assertEq(accountBalanceBeforeStash, 0, "Payer's account balance should be zero before stashing");
 
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
         uint expectedPayeeAmount = requiredAmount - expectedPlatformFee;
-        // Expect the RelayApproved event to be emitted
-        vm.expectEmit(true, true, false, false);
+        // Expect the event to be emitted
+        vm.expectEmit(true, true, false, true);
         emit IRelay.FundsStashed(alice, 0, requiredAmount, expectedPayeeAmount, expectedPlatformFee);
 
         // Payer stashes funds
@@ -92,6 +96,10 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payer
         uint accountBalance = relay.accountBalances(alice);
         assertEq(accountBalance, expectedPayeeAmount, "Payer's account balance should match the expected amount");
+
+        // Check the account balance of the contract owner
+        uint ownerAccountBalance = relay.accountBalances(owner);
+        assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
     }
 
     function testStashFundsAfterUnlockTime() public {
@@ -107,11 +115,11 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
         uint expectedPayeeAmount = requiredAmount - expectedPlatformFee;
-        // Expect the RelayApproved event to be emitted
+        // Expect the event to be emitted
         vm.expectEmit(true, true, false, true);
         emit IRelay.FundsStashed(alice, 0, requiredAmount, expectedPayeeAmount, expectedPlatformFee);
 
-        // Payer can stash funds without approval because passed the unlock time
+        // Payee can stash funds without approval because passed the unlock time
         vm.prank(bob);
         relay.stashFunds(
             alice,
@@ -121,6 +129,10 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payee
         uint accountBalance = relay.accountBalances(bob);
         assertEq(accountBalance, expectedPayeeAmount, "Payee's account balance should match the expected amount");
+
+        // Check the account balance of the contract owner
+        uint ownerAccountBalance = relay.accountBalances(owner);
+        assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
     }
 
     function testStashFundsRevertsIfRelayNotLocked() public {
@@ -187,16 +199,34 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         );
     }
 
-    function testApproveRelayRevertsIfAlreadyReturned() public {
+    function testStashFundsRevertsIfNotApprovedOrReturnedAndNotPastUnlockTime() public {
         _depositFunds();
 
-        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
-        vm.prank(alice);
-        relay.returnRelay(alice, 0); // Return the relay first
+        vm.warp(_getUnlockAt() - 1); // Ensure we are before the unlock time
+
+        vm.prank(bob);
+        vm.expectRevert(IRelay.ErrNotPastUnlockTime.selector);
+        relay.stashFunds(
+            alice,
+            0
+        );
+    }
+
+    function testStashFundsRevertsIfPastUnlockTimeNotApprovedOrReturnedAndNotPayee() public {
+        _depositFunds();
+
+        vm.warp(_getUnlockAt() + 1); // Ensure we are after the unlock time
 
         vm.prank(alice);
-        vm.expectRevert(IRelay.ErrRelayAlreadyApprovedOrReturned.selector);
-        relay.approveRelay(
+        vm.expectRevert(IRelay.ErrSenderNotPayee.selector);
+        relay.stashFunds(
+            alice,
+            0
+        );
+
+        vm.prank(dee);
+        vm.expectRevert(IRelay.ErrSenderNotPayee.selector);
+        relay.stashFunds(
             alice,
             0
         );
