@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.23;
 
-import "./EscrowStructs.sol";
+import {EscrowStructs} from "./EscrowStructs.sol";
 import {IRelay} from "./IRelay.sol";
 import {IUndisputableRelay} from "./IUndisputableRelay.sol";
 import {RelayBase} from "./RelayBase.sol";
@@ -84,17 +84,15 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
     function _validateWithdrawal(address _creator, uint _index) internal view {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
 
-        if (relay.isLocked) {
-            if (relay.isReturning) {
-                require(relay.payer == msg.sender, "TransactionRelay: only the payer can withdraw funds (if marked as returning)");
-            } else if (relay.isApproved) {
-                require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and approved)");
-            } else {
-                require(_isPassedAutomaticUnlockTime(_creator, _index), "TransactionRelay: can not withdraw funds if not approved and not passed automatic approval time");
-                require(relay.payee == msg.sender, "TransactionRelay: only the payee can withdraw funds (if locked and not approved)");
-            }
+        if (!relay.isLocked) {
+            revert ErrRelayNotLocked();
+        } else if (relay.isApproved) {
+            require(relay.payee == msg.sender, ErrSenderNotPayee());
+        } else if (relay.isReturning) {
+            require(relay.payer == msg.sender, ErrSenderNotPayer());
         } else {
-            revert("TransactionRelay: can not withdraw funds if relay isn't locked");
+            require(_isPassedAutomaticUnlockTime(_creator, _index), ErrNotPastUnlockTime());
+            require(relay.payee == msg.sender, ErrSenderNotPayee());
         }
     }
 
@@ -103,8 +101,8 @@ abstract contract UndisputableRelayBase is RelayBase, IUndisputableRelay {
         uint platformFee = 0;
         uint grossAmount = 0;
 
-        // If the relay is not locked, the full amount can be withdrawn
-        if (relay.isLocked && (relay.isReturning || relay.isApproved)) {
+        // If the relay is returned or approved or if the automatic unlock time has passed
+        if (relay.isApproved || relay.isReturning || _isPassedAutomaticUnlockTime(_creator, _index)) {
             platformFee = _calculateBasisPointProportion(relay.currentBalance, basisPointFee);
             grossAmount = relay.currentBalance - platformFee;
         }

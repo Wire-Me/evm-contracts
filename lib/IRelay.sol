@@ -21,8 +21,10 @@ interface IRelay {
     error ErrDepositAmountNotEqualToRequiredAmount();
     error ErrRelayNotLocked();
     error ErrSenderNotPayer();
+    error ErrSenderNotPayee();
     error ErrRelayAlreadyApprovedOrReturned();
     error ErrNotAfterAllowReturnTimestamp();
+    error ErrNotPastUnlockTime();
 
     /// @notice Gets information about the actors involved in the relay agreement.
     /// ---

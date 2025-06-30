@@ -41,4 +41,8 @@ abstract contract DiscretionaryRelayTest is Test {
     function _getReturnAfter() internal view returns (uint) {
         return currentBlockTimestamp + 5 days;
     }
+
+    function _calculateBasisPointProportion(uint _amount, uint basisPoints) internal pure returns (uint) {
+        return (_amount * basisPoints) / 10000;
+    }
 }
