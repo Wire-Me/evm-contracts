@@ -7,21 +7,20 @@ import {StdAssertions} from "../../lib/forge-std/src/StdAssertions.sol";
 import {StdChains} from "../../lib/forge-std/src/StdChains.sol";
 import {StdCheats, StdCheatsSafe} from "../../lib/forge-std/src/StdCheats.sol";
 import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
-import {DiscretionaryRelayTest} from "./DiscretionaryRelayTest.t.sol";
+import {TimeLockRelayTest} from "./TimeLockRelayTest.t.sol";
 
 
-contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
+contract TimeLockRelayReturnRelayTest is TimeLockRelayTest {
     uint public requiredAmount = 1_000_000_000_000_000_000; // 1 ETH in wei
 
     function setUp() public override {
-        DiscretionaryRelayTest.setUp(); // Call the setup from the base test contract
+        TimeLockRelayTest.setUp(); // Call the setup from the base test contract
         // Create the relay
-        _createDiscretionaryRelay(
+        _createTimeLockRelay(
             requiredAmount,
             alice,
             bob,
             _getUnlockAt(),
-            _getReturnAfter(),
             alice
         );
     }
@@ -29,12 +28,11 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
     function testReturnRelayHappyPath() public {
         _depositFunds();
 
-        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
-        vm.prank(alice);
         // Expect the RelayApproved event to be emitted
         vm.expectEmit(true, true, false, false);
         emit IRelay.RelayReturned(alice, 0);
-        // Alice returns the relay
+        // Bob returns the relay
+        vm.prank(bob);
         relay.returnRelay(
             alice,
             0
@@ -49,8 +47,8 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
     }
 
     function testApproveRelayRevertsIfRelayNotLocked() public {
-        vm.prank(alice);
         vm.expectRevert(IRelay.ErrRelayNotLocked.selector);
+        vm.prank(bob);
         relay.returnRelay(
             alice,
             0
@@ -63,7 +61,7 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
         vm.prank(alice);
         relay.approveRelay(alice, 0); // Approve the relay first
 
-        vm.prank(alice);
+        vm.prank(bob);
         vm.expectRevert(IRelay.ErrRelayAlreadyApprovedOrReturned.selector);
         relay.returnRelay(
             alice,
@@ -71,20 +69,18 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
         );
     }
 
-    function testReturnRelayRevertsIfSenderNotPayer() public {
+    function testReturnRelayRevertsIfSenderNotPayee() public {
         _depositFunds();
 
-        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
-
-        vm.prank(bob);
-        vm.expectRevert(IRelay.ErrSenderNotPayer.selector);
+        vm.prank(alice);
+        vm.expectRevert(IRelay.ErrSenderNotPayee.selector);
         relay.returnRelay(
             alice,
             0
         );
 
         vm.prank(dee);
-        vm.expectRevert(IRelay.ErrSenderNotPayer.selector);
+        vm.expectRevert(IRelay.ErrSenderNotPayee.selector);
         relay.returnRelay(
             alice,
             0
@@ -94,24 +90,11 @@ contract DiscretionaryRelayReturnRelayTest is DiscretionaryRelayTest {
     function testReturnRelayRevertsIfRelayAlreadyReturned() public {
         _depositFunds();
 
-        vm.warp(_getReturnAfter() + 1); // Ensure allowReturnAfter has passed
-        vm.prank(alice);
+        vm.prank(bob);
         relay.returnRelay(alice, 0); // Return the relay first
 
-        vm.prank(alice);
         vm.expectRevert(IRelay.ErrRelayAlreadyApprovedOrReturned.selector);
-        relay.returnRelay(
-            alice,
-            0
-        );
-    }
-
-    function testReturnRelayRevertsIfAllowReturnAfterNotPassed() public {
-        _depositFunds();
-
-        vm.warp(_getReturnAfter() - 1); // Ensure allowReturnAfter has not passed
-        vm.prank(alice);
-        vm.expectRevert(IRelay.ErrNotAfterAllowReturnTimestamp.selector);
+        vm.prank(bob);
         relay.returnRelay(
             alice,
             0
