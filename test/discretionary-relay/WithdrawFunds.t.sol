@@ -67,6 +67,12 @@ contract DiscretionaryRelayWithdrawFundsTest is DiscretionaryRelayTest {
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after withdrawal");
+        assertEq(currentBalance, 0, "Current balance should be zero after withdrawal");
+        assertTrue(isInitialized, "Relay balances should be initialized after withdrawal");
     }
 
     function testWithdrawFundsAfterReturnHappyPath() public {
@@ -111,6 +117,12 @@ contract DiscretionaryRelayWithdrawFundsTest is DiscretionaryRelayTest {
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after withdrawal");
+        assertEq(currentBalance, 0, "Current balance should be zero after withdrawal");
+        assertTrue(isInitialized, "Relay balances should be initialized after withdrawal");
     }
 
     function testWithdrawFundsAfterUnlockTime() public {
@@ -150,6 +162,12 @@ contract DiscretionaryRelayWithdrawFundsTest is DiscretionaryRelayTest {
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after withdrawal");
+        assertEq(currentBalance, 0, "Current balance should be zero after withdrawal");
+        assertTrue(isInitialized, "Relay balances should be initialized after withdrawal");
     }
 
     function testWithdrawFundsRevertsIfRelayNotLocked() public {
