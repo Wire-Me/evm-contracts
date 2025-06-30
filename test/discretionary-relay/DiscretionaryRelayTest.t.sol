@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GNU-3.0
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.30;
 
 
 import {Test} from "../../lib/forge-std/src/Test.sol";
