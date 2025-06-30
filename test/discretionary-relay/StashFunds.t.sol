@@ -41,6 +41,9 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         uint accountBalanceBeforeStash = relay.accountBalances(bob);
         assertEq(accountBalanceBeforeStash, 0, "Payee's account balance should be zero before stashing");
 
+        // Check the wallet balance of the payee before stashing
+        uint initialWalletBalance = bob.balance;
+
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
         uint expectedPayeeAmount = requiredAmount - expectedPlatformFee;
@@ -58,10 +61,18 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payee
         uint accountBalance = relay.accountBalances(bob);
         assertEq(accountBalance, expectedPayeeAmount, "Payee's account balance should match the expected amount");
+        // Check the wallet balance of the payee
+        assertEq(bob.balance, initialWalletBalance, "Payee's wallet balance should remain unchanged after stashing funds");
 
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after stashing");
+        assertEq(currentBalance, 0, "Current balance should be zero after stashing");
+        assertTrue(isInitialized, "Relay balances should be initialized after stashing");
     }
 
     function testStashFundsAfterReturnHappyPath() public {
@@ -78,6 +89,8 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Payer's account balance should be zero before stashing
         uint accountBalanceBeforeStash = relay.accountBalances(alice);
         assertEq(accountBalanceBeforeStash, 0, "Payer's account balance should be zero before stashing");
+        // Check the wallet balance of the payee before stashing
+        uint initialWalletBalance = alice.balance;
 
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
@@ -96,10 +109,18 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payer
         uint accountBalance = relay.accountBalances(alice);
         assertEq(accountBalance, expectedPayeeAmount, "Payer's account balance should match the expected amount");
+        // Check the wallet balance of the payer
+        assertEq(alice.balance, initialWalletBalance, "Payer's wallet balance should remain unchanged after stashing funds");
 
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after stashing");
+        assertEq(currentBalance, 0, "Current balance should be zero after stashing");
+        assertTrue(isInitialized, "Relay balances should be initialized after stashing");
     }
 
     function testStashFundsAfterUnlockTime() public {
@@ -111,6 +132,8 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Payee's account balance should be zero before stashing
         uint accountBalanceBeforeStash = relay.accountBalances(bob);
         assertEq(accountBalanceBeforeStash, 0, "Payee's account balance should be zero before stashing");
+        // Check the wallet balance of the payee before stashing
+        uint initialWalletBalance = bob.balance;
 
         // Calculate expected amounts
         uint expectedPlatformFee = _calculateBasisPointProportion(requiredAmount, relay.basisPointFee());
@@ -129,10 +152,18 @@ contract DiscretionaryRelayStashFundsTest is DiscretionaryRelayTest {
         // Check the new account balance of the payee
         uint accountBalance = relay.accountBalances(bob);
         assertEq(accountBalance, expectedPayeeAmount, "Payee's account balance should match the expected amount");
+        // Check the wallet balance of the payee
+        assertEq(bob.balance, initialWalletBalance, "Payee's wallet balance should remain unchanged after stashing funds");
 
         // Check the account balance of the contract owner
         uint ownerAccountBalance = relay.accountBalances(owner);
         assertEq(ownerAccountBalance, expectedPlatformFee, "Owner's account balance should match the platform fee amount");
+
+        // Check the relay balances
+        (uint requiredBalance, uint currentBalance, bool isInitialized ) = relay.getRelayBalances(alice, 0);
+        assertEq(requiredBalance, requiredAmount, "Required balance should remain unchanged after stashing");
+        assertEq(currentBalance, 0, "Current balance should be zero after stashing");
+        assertTrue(isInitialized, "Relay balances should be initialized after stashing");
     }
 
     function testStashFundsRevertsIfRelayNotLocked() public {
