@@ -7,7 +7,7 @@ import {DiscretionaryRelay} from "../../lib/DiscretionaryRelay.sol";
 
 abstract contract DiscretionaryRelayTest is Test {
     DiscretionaryRelay public relay;
-    address public owner = address(0x0bcE5);
+    address public owner = address(0xb055);
     address public alice = address(0xA11CE);
     address public bob = address(0xB0B);
     address public dee = address(0xDEE);
