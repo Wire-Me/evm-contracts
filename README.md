@@ -28,3 +28,45 @@ To Sepolia
 ```bash
 npx hardhat ignition deploy ./ignition/modules/Lock.ts --network sepolia
 ```
+
+# Testing
+
+## Setup
+
+Install Foundry
+
+```bash
+# Download foundry installer `foundryup`
+curl -L https://foundry.paradigm.xyz | bash
+# Install forge, cast, anvil, chisel
+foundryup
+```
+
+## Run Tests
+
+Run the Foundry unit tests using the following command:
+
+```bash
+forge test
+```
+
+### Run Single Test
+To run a single test, you can use the `--match-test` option with the function name. For example:
+
+```bash
+forge test --match-test testCreateRelayHappyPath
+```
+
+### Debugging Tests
+To debug a test, you can use the `console.log`. This will allow you to print variables and other information during the test execution.
+
+```solidity
+// Import the console library from Forge
+import {console} from "../../lib/forge-std/src/console.sol";
+// In your test function, you can use console.log to print variables
+console.log(block.timestamp);
+```
+To see the console logs, you need to run the test with the `-vvvv` flag:
+```bash
+forge test -vvvv
+```
