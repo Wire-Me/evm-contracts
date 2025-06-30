@@ -10,12 +10,11 @@ contract TimeLockRelay is UndisputableRelayBase {
 
     function returnRelay(address _creator, uint _index) external override {
         EscrowStructs.Relay storage relay = relays[_creator][_index];
-        require(relay.isLocked == true, "TransactionRelay: can only return funds if locked");
-        require(relay.isApproved == false, "TransactionRelay: can not return funds if already approved");
-        require(relay.isReturning == false, "TransactionRelay: can not return funds if already returning");
-        require(relay.allowReturnAfter < block.timestamp, "TransactionRelay: can not return funds before allowReturnAfter");
+        require(relay.isLocked == true, ErrRelayNotLocked());
+        require(relay.isApproved == false, ErrRelayAlreadyApprovedOrReturned());
+        require(relay.isReturning == false, ErrRelayAlreadyApprovedOrReturned());
 
-        require(relay.payee == msg.sender, "TransactionRelay: only the payee can return funds (if time lock)");
+        require(relay.payee == msg.sender, ErrSenderNotPayee());
 
         relays[_creator][_index].isReturning = true;
 
