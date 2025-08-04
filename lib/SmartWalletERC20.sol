@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {FxEscrowERC20} from "./FxEscrowERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import {AdminBase} from "./AdminBase.sol";
 
 
 abstract contract SmartWalletERC20 is AdminBase {
@@ -15,10 +15,10 @@ abstract contract SmartWalletERC20 is AdminBase {
         require(_erc20TokenAddress != address(0), "ERC20 token address cannot be zero");
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
-        admin = msg.sender;
+        admin = payable(msg.sender);
         erc20TokenContract = IERC20(_erc20TokenAddress);
         escrowContract = FxEscrowERC20(_escrowContractAddress);
-        authorizedUserExternalAccount = _authorizedUserExternalWallet;
+        authorizedUserExternalAccount = payable(_authorizedUserExternalWallet);
 
         // Make sure the escrow contract address specified corresponds to a valid FxEscrowERC20 contract
         try escrowContract.isFxEscrowContractTest() returns (bool isInitialized) {
