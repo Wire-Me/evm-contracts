@@ -49,6 +49,7 @@ Run the Foundry unit tests using the following command:
 ```bash
 forge test
 ```
+This will add the forge-std library to your project directory (in `/lib/forge-std`) and run all the tests in the `/test` directory.
 
 ### Run Single Test
 To run a single test, you can use the `--match-test` option with the function name. For example:
