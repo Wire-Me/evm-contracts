@@ -44,7 +44,6 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
                 isWithdrawn: false,
                 isFrozen: false,
                 isReturned: false,
-                isInitialized: true,
                 selectedBrokerAccount: address(0),
                 selectedOfferIndex: 0
             })
@@ -56,15 +55,14 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         uint escrowIndex
     ) external onlyAuthorizedBrokers {
         EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
-        require(escrow.selectedBrokerAccount != address(0), "Escrow already has selected an offer");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
+        require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
 
         offers[msg.sender].push(
             EscrowStructs.FXEscrowOffer({
                 escrowAccount: escrowAccount,
                 escrowIndex: escrowIndex,
-                createdAt: block.timestamp,
-                isInitialized: true
+                createdAt: block.timestamp
             })
         );
     }
@@ -77,8 +75,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][_escrowIndex];
         EscrowStructs.FXEscrowOffer storage offer = offers[_offerAccount][_offerIndex];
 
-        require(escrow.isInitialized, "Escrow is not initialized");
-        require(offer.isInitialized, "Offer is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
+        require(offer.createdAt > 0, "Offer is not initialized");
 
         escrow.selectedBrokerAccount = _offerAccount;
         escrow.selectedOfferIndex = _offerIndex;
@@ -86,7 +84,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function freezeEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
         EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isFrozen, "Escrow is already frozen");
 
         escrow.isFrozen = true;
@@ -94,7 +92,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function defrostEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
         EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.isFrozen, "Escrow is not frozen");
 
         escrow.isFrozen = false;
@@ -102,7 +100,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function returnEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
         EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
 
         escrow.isReturned = true;
@@ -111,7 +109,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function extendEscrow(uint escrowIndex) external onlyAuthorizedUsers {
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
 
         // Extend the escrow expiration by the default duration
@@ -120,7 +118,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function withdrawEscrowAfterCompletion(address escrowAccount, uint escrowIndex) external onlyAuthorizedBrokers {
         EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(!escrow.isFrozen, "Escrow is frozen and cannot be withdrawn");
         require(escrow.selectedBrokerAccount == msg.sender, "Only the selected broker can withdraw from the escrow");
@@ -134,7 +132,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function withdrawEscrowEarly(uint escrowIndex) external onlyAuthorizedUsers {
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
 
@@ -146,7 +144,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
     function withdrawEscrowAfterReturn(uint escrowIndex) external onlyAuthorizedUsers {
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
-        require(escrow.isInitialized, "Escrow is not initialized");
+        require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(escrow.isReturned, "Escrow has not been returned");
 

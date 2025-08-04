@@ -44,8 +44,6 @@ library EscrowStructs {
         bool isFrozen;
         /// @notice 'true' if the user can withdraw the funds of the escrow
         bool isReturned;
-        /// @notice 'true' if initialized
-        bool isInitialized;
         /// @notice the address of the broker account who has made the offer which has been selected by the user
         address selectedBrokerAccount;
         /// @notice the index of the offer made by the broker account which has been selected by the user
@@ -59,8 +57,6 @@ library EscrowStructs {
         uint escrowIndex;
         /// @notice The epoch timestamp (seconds) at which the offer was created
         uint createdAt;
-        /// @notice 'true' if initialized
-        bool isInitialized;
     }
 }
 
