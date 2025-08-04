@@ -30,5 +30,37 @@ library EscrowStructs {
         /// @dev For conditional relays this is the completion date, and for guaranteed relays this is zero (guaranteed relays can be returned at any time).
         uint allowReturnAfter;
     }
+
+    struct FXEscrow {
+        /// @notice the amount of funds held in escrow
+        uint amount;
+        /// @notice the epoch timestamp (seconds) at which the escrow was created
+        uint createdAt;
+        /// @notice the epoch timestamp (seconds) at which the escrow will expire
+        uint expirationTimestamp;
+        /// @notice 'true' if the funds of the escrow have been withdrawn
+        bool isWithdrawn;
+        /// @notice 'true' if the escrow is frozen and cannot be withdrawn even after expiration
+        bool isFrozen;
+        /// @notice 'true' if the user can withdraw the funds of the escrow
+        bool isReturned;
+        /// @notice 'true' if initialized
+        bool isInitialized;
+        /// @notice the address of the broker account who has made the offer which has been selected by the user
+        address selectedBrokerAccount;
+        /// @notice the index of the offer made by the broker account which has been selected by the user
+        uint selectedOfferIndex;
+    }
+
+    struct FXEscrowOffer {
+        /// @notice the account address of the user who created the escrow that this offer is linked to
+        address escrowAccount;
+        /// @notice the escrow index that this offer is linked to
+        uint escrowIndex;
+        /// @notice The epoch timestamp (seconds) at which the offer was created
+        uint createdAt;
+        /// @notice 'true' if initialized
+        bool isInitialized;
+    }
 }
 
