@@ -21,9 +21,16 @@ contract UserSmartWalletERC20TransferFundsAndCreateEscrowTest is Test {
     UserSmartWalletERC20 public userWallet;
     FxEscrowERC20 public escrowContract;
     address public admin = address(0xb055);
+    uint public currentBlockTimestamp = 4102444800; // 2100/01/01 00:00:00 GMT
+
 
     function setUp() public {
         vm.startPrank(admin);
+
+        // Set the current block timestamp
+        vm.warp(currentBlockTimestamp);
+
+        // Set up contracts
         tokenContract = new TestToken("Test Token", "TTK");
         escrowContract = new FxEscrowERC20(100, address(tokenContract));
         userWallet = new UserSmartWalletERC20(address(tokenContract), address(escrowContract), address(0));
@@ -46,8 +53,16 @@ contract UserSmartWalletERC20TransferFundsAndCreateEscrowTest is Test {
         assertEq(tokenContract.balanceOf(address(escrowContract)), amountToTransfer);
 
         // Check that the escrow was created with the correct amount
-        (uint amount,,,,,,,) = escrowContract.escrows(address(userWallet), 0);
+        (uint amount, uint createdAt, uint expiration, bool isWithdrawn, bool isFrozen, bool isReturned, address selectedBrokerAccount, uint selectedOfferIndex) = escrowContract.escrows(address(userWallet), 0);
         assertEq(amount, amountToTransfer);
+        assertEq(createdAt, currentBlockTimestamp);
+        assertEq(expiration, currentBlockTimestamp + escrowContract.defaultEscrowDuration());
+        assertFalse(isWithdrawn);
+        assertFalse(isFrozen);
+        assertFalse(isReturned);
+        assertEq(selectedBrokerAccount, address(0)); // No broker selected yet
+        assertEq(selectedOfferIndex, 0);
+
         vm.stopPrank();
     }
 
