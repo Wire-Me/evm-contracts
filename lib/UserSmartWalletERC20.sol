@@ -15,7 +15,7 @@ contract UserSmartWalletERC20 is SmartWalletERC20 {
     }
 
     function linkOfferToEscrow(uint _escrowIndex, address _offerAccount, uint _offerIndex) external onlyAdminOrAuthorizedUser {
-        require(_offerAccount != address(0), "Broker account cannot be zero address");
+        require(_offerAccount != address(0), "Offer account cannot be zero address");
 
         escrowContract.linkOfferToEscrow(_escrowIndex, _offerAccount, _offerIndex);
     }
