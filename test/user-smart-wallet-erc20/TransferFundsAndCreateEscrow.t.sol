@@ -46,7 +46,7 @@ contract UserSmartWalletERC20TransferFundsAndCreateEscrowTest is Test {
         assertEq(tokenContract.balanceOf(address(escrowContract)), amountToTransfer);
 
         // Check that the escrow was created with the correct amount
-        (uint amount,,,,,,,,) = escrowContract.escrows(address(userWallet), 0);
+        (uint amount,,,,,,,) = escrowContract.escrows(address(userWallet), 0);
         assertEq(amount, amountToTransfer);
         vm.stopPrank();
     }
