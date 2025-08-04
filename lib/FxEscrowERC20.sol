@@ -111,9 +111,10 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
+        require(escrow.expirationTimestamp < block.timestamp, "Escrow has not yet expired");
 
         // Extend the escrow expiration by the default duration
-        escrow.expirationTimestamp += (block.timestamp + defaultEscrowDuration);
+        escrow.expirationTimestamp = (block.timestamp + defaultEscrowDuration);
     }
 
     function withdrawEscrowAfterCompletion(address escrowAccount, uint escrowIndex) external onlyAuthorizedBrokers {
