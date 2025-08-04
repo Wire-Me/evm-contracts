@@ -5,6 +5,9 @@ import {SmartWalletERC20} from "./SmartWalletERC20.sol";
 
 
 contract BrokerSmartWalletERC20 is SmartWalletERC20 {
+    constructor(address _erc20TokenAddress, address _escrowContractAddress, address _authorizedUserExternalWallet)
+        SmartWalletERC20(_erc20TokenAddress, _escrowContractAddress, _authorizedUserExternalWallet) {}
+
     function createOffer(
         address _escrowAccount,
         uint _escrowIndex
