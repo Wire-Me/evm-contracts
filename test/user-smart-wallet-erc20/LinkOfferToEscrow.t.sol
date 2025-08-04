@@ -12,7 +12,6 @@ import {TestToken} from "../../lib/erc20/TestToken.sol";
 import {UserSmartWalletERC20} from "../../lib/UserSmartWalletERC20.sol";
 import {FxEscrowERC20} from "../../lib/FxEscrowERC20.sol";
 import "../../lib/EscrowStructs.sol";
-import {console} from "../../lib/forge-std/src/console.sol";
 import {BrokerSmartWalletERC20} from "../../lib/BrokerSmartWalletERC20.sol";
 
 contract UserSmartWalletERC20LinkOfferToEscrowTest is Test {
