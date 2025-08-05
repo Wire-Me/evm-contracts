@@ -9,10 +9,10 @@ import {StdChains} from "../../lib/forge-std/src/StdChains.sol";
 import {StdCheats, StdCheatsSafe} from "../../lib/forge-std/src/StdCheats.sol";
 import {StdUtils} from "../../lib/forge-std/src/StdUtils.sol";
 import {TestToken} from "../../lib/erc20/TestToken.sol";
-import {UserSmartWalletERC20} from "../../lib/UserSmartWalletERC20.sol";
-import {FxEscrowERC20} from "../../lib/FxEscrowERC20.sol";
+import {UserSmartWalletERC20} from "../../lib/fx-contracts/UserSmartWalletERC20.sol";
+import {FxEscrowERC20} from "../../lib/fx-contracts/FxEscrowERC20.sol";
 import "../../lib/EscrowStructs.sol";
-import {BrokerSmartWalletERC20} from "../../lib/BrokerSmartWalletERC20.sol";
+import {BrokerSmartWalletERC20} from "../../lib/fx-contracts/BrokerSmartWalletERC20.sol";
 
 contract UserSmartWalletERC20LinkOfferToEscrowTest is Test {
     TestToken public tokenContract;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import "./EscrowStructs.sol";
+import "../EscrowStructs.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {AuthorizedBrokerWalletManager} from "./AuthorizedBrokerWalletManager.sol";
