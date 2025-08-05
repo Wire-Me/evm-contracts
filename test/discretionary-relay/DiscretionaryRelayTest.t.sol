@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 
 import {Test} from "../../lib/forge-std/src/Test.sol";
-import {DiscretionaryRelay} from "../../lib/DiscretionaryRelay.sol";
+import {DiscretionaryRelay} from "../../lib/deal-contracts/DiscretionaryRelay.sol";
 
 abstract contract DiscretionaryRelayTest is Test {
     DiscretionaryRelay public relay;

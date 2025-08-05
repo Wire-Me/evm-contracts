@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import {IRelay} from "../../lib/IRelay.sol";
+import {IRelay} from "../../lib/deal-contracts/IRelay.sol";
 import {CommonBase} from "../../lib/forge-std/src/Base.sol";
 import {StdAssertions} from "../../lib/forge-std/src/StdAssertions.sol";
 import {StdChains} from "../../lib/forge-std/src/StdChains.sol";
