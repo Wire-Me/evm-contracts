@@ -136,6 +136,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
+        require(!escrow.isFrozen, "Escrow is frozen and cannot be withdrawn");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
 
         escrow.isWithdrawn = true;
@@ -149,6 +150,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(escrow.isReturned, "Escrow has not been returned");
+        require(!escrow.isFrozen, "Escrow is frozen and cannot be withdrawn");
 
         escrow.isWithdrawn = true;
 
