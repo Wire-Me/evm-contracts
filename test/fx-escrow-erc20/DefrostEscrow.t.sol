@@ -54,8 +54,6 @@ contract UserSmartWalletERC20DefrostEscrowTest is Test {
         // Link the offer to the escrow
         userWallet.linkOfferToEscrow(0, address(brokerWallet), 0);
 
-
-
         vm.stopPrank();
     }
 
