@@ -3,8 +3,8 @@ pragma solidity ^0.8.30;
 
 
 import {Test} from "../../lib/forge-std/src/Test.sol";
-import {DiscretionaryRelay} from "../../lib/DiscretionaryRelay.sol";
-import {TimeLockRelay} from "../../lib/TimeLockRelay.sol";
+import {DiscretionaryRelay} from "../../lib/deal-contracts/DiscretionaryRelay.sol";
+import {TimeLockRelay} from "../../lib/deal-contracts/TimeLockRelay.sol";
 
 abstract contract TimeLockRelayTest is Test {
     TimeLockRelay public relay;

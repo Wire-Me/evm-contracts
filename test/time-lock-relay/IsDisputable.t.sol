@@ -1,6 +1,6 @@
 pragma solidity ^0.8.20;
 
-import "../../lib/IRelay.sol";
+import "../../lib/deal-contracts/IRelay.sol";
 import {CommonBase} from "../../lib/forge-std/src/Base.sol";
 import {StdAssertions} from "../../lib/forge-std/src/StdAssertions.sol";
 import {StdChains} from "../../lib/forge-std/src/StdChains.sol";

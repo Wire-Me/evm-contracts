@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import "./EscrowStructs.sol";
+import "../EscrowStructs.sol";
 import {UndisputableRelayBase} from "./UndisputableRelayBase.sol";
 
 /// @author Ian Pierce

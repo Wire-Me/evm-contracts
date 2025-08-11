@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {RelayBase} from "./RelayBase.sol";
 import {IRelay} from "./IRelay.sol";
 import {IDisputableRelay} from "./IDisputableRelay.sol";
-import {EscrowStructs} from "./EscrowStructs.sol";
+import {EscrowStructs} from "../EscrowStructs.sol";
 
 /// @author Ian Pierce
 abstract contract DisputableRelayBase is RelayBase, IDisputableRelay {
