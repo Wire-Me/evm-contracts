@@ -11,13 +11,12 @@ abstract contract SmartWalletERC20 is AdminBase {
     IERC20 immutable public erc20TokenContract;
     FxEscrowERC20 immutable public escrowContract;
 
-    constructor(address _erc20TokenAddress, address _escrowContractAddress, address _authorizedUserExternalWallet) {
-        require(_erc20TokenAddress != address(0), "ERC20 token address cannot be zero");
+    constructor(address _escrowContractAddress, address _authorizedUserExternalWallet) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
         admin = payable(msg.sender);
-        erc20TokenContract = IERC20(_erc20TokenAddress);
         escrowContract = FxEscrowERC20(_escrowContractAddress);
+        erc20TokenContract = escrowContract.erc20TokenContract();
         authorizedUserExternalAccount = payable(_authorizedUserExternalWallet);
 
         // Make sure the escrow contract address specified corresponds to a valid FxEscrowERC20 contract
