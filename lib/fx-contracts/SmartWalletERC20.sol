@@ -7,33 +7,31 @@ import {AdminBase} from "./AdminBase.sol";
 
 
 abstract contract SmartWalletERC20 is AdminBase {
-    address payable public authorizedUserExternalAccount; // The external wallet address of the user
     IERC20 immutable public erc20TokenContract;
     FxEscrowERC20 immutable public escrowContract;
 
-    constructor(address _escrowContractAddress, address _authorizedUserExternalWallet) {
+    constructor(address _escrowContractAddress, address _admin) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
-        admin = payable(msg.sender);
+        admin = payable(_admin);
         escrowContract = FxEscrowERC20(_escrowContractAddress);
         erc20TokenContract = escrowContract.erc20TokenContract();
-        authorizedUserExternalAccount = payable(_authorizedUserExternalWallet);
 
         // Make sure the escrow contract address specified corresponds to a valid FxEscrowERC20 contract
-        try escrowContract.isFxEscrowContractTest() returns (bool isInitialized) {
-            require(isInitialized, "escrow contract address specified does not correctly implement the isFxEscrowContractTest function");
-        } catch {
-            revert("escrow contract does not implement required interface");
-        }
+//        try escrowContract.isFxEscrowContractTest() returns (bool isInitialized) {
+//            require(isInitialized, "escrow contract address specified does not correctly implement the isFxEscrowContractTest function");
+//        } catch {
+//            revert("escrow contract does not implement required interface");
+//        }
     }
 
-    modifier onlyAdminOrAuthorizedUser() {
-        require(msg.sender == admin || msg.sender == authorizedUserExternalAccount, "Only admin or authorized user account can call this function");
-        _;
-    }
+//    modifier onlyAdminOrAuthorizedUser() {
+//        require(msg.sender == admin || msg.sender == authorizedUserExternalAccount, "Only admin or authorized user account can call this function");
+//        _;
+//    }
 
-    function setAuthorizedUserExternalAccount(address payable _newExternalAccount) external onlyAdmin {
-        require(_newExternalAccount != address(0), "New external account cannot be zero address");
-        authorizedUserExternalAccount = _newExternalAccount;
-    }
+//    function setAuthorizedUserExternalAccount(address payable _newExternalAccount) external onlyAdmin {
+//        require(_newExternalAccount != address(0), "New external account cannot be zero address");
+//        authorizedUserExternalAccount = _newExternalAccount;
+//    }
 }

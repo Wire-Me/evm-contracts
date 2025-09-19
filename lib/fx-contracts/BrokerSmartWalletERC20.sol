@@ -11,12 +11,12 @@ contract BrokerSmartWalletERC20 is SmartWalletERC20 {
     function createOffer(
         address _escrowAccount,
         uint _escrowIndex
-    ) external onlyAdminOrAuthorizedUser {
+    ) external {
         require(_escrowAccount != address(0), "Escrow account cannot be zero address");
         escrowContract.createOffer(_escrowAccount, _escrowIndex);
     }
 
-    function withdrawEscrow(address escrowAccount, uint escrowIndex) external onlyAdminOrAuthorizedUser {
+    function withdrawEscrow(address escrowAccount, uint escrowIndex) external {
         escrowContract.withdrawEscrowAfterCompletion(escrowAccount, escrowIndex);
     }
 }
