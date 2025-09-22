@@ -5,8 +5,8 @@ import {SmartWalletERC20} from "./SmartWalletERC20.sol";
 
 
 contract UserSmartWalletERC20 is SmartWalletERC20 {
-    constructor(address _escrowContractAddress, address _authorizedUserExternalWallet)
-        SmartWalletERC20(_escrowContractAddress, _authorizedUserExternalWallet) {}
+    constructor(address _escrowContractAddress, address _admin)
+        SmartWalletERC20(_escrowContractAddress, _admin) {}
 
     function transferFundsAndCreateEscrow(uint _amount) external {
         erc20TokenContract.transfer(address(escrowContract), _amount);
