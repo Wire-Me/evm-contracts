@@ -1,4 +1,5 @@
-
+// SPDX-License-Identifier: GNU-3.0
+pragma solidity ^0.8.30;
 
 contract UserSmartWalletERC20Proxy {
     address public implementation;
