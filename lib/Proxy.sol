@@ -17,11 +17,12 @@ contract Proxy {
     }
 
     fallback() external payable {
+        address impl = implementation;
         require(implementation != address(0), "No implementation");
 
         assembly {
             calldatacopy(0, 0, calldatasize())
-            let success := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+            let success := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
             returndatacopy(0, 0, returndatasize())
 
             switch success
