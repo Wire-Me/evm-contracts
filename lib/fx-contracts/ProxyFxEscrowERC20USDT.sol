@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-contract ProxyFxEscrowERC20USDC {
+contract ProxyFxEscrowERC20USDT {
     address public implementation;
     address public admin;
 
