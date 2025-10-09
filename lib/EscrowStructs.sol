@@ -55,6 +55,8 @@ library EscrowStructs {
         address escrowAccount;
         /// @notice the escrow index that this offer is linked to
         uint escrowIndex;
+        /// @notice
+        uint feeBasisPoints; // The fee that will be changed when withdrawing funds from the escrow in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
         /// @notice The epoch timestamp (seconds) at which the offer was created
         uint createdAt;
     }
