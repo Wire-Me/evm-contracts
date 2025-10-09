@@ -6,32 +6,61 @@ import {FxEscrowERC20} from "./FxEscrowERC20.sol";
 import {AdminBase} from "./AdminBase.sol";
 
 
-abstract contract SmartWalletERC20 is AdminBase {
+contract SmartWalletERC20 is AdminBase {
     IERC20 immutable public erc20TokenContract;
     FxEscrowERC20 immutable public escrowContract;
 
     constructor(address _escrowContractAddress, address _admin) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
-        admin = payable(_admin);
+        admin = _admin;
         escrowContract = FxEscrowERC20(_escrowContractAddress);
         erc20TokenContract = escrowContract.erc20TokenContract();
-
-        // Make sure the escrow contract address specified corresponds to a valid FxEscrowERC20 contract
-//        try escrowContract.isFxEscrowContractTest() returns (bool isInitialized) {
-//            require(isInitialized, "escrow contract address specified does not correctly implement the isFxEscrowContractTest function");
-//        } catch {
-//            revert("escrow contract does not implement required interface");
-//        }
     }
 
-//    modifier onlyAdminOrAuthorizedUser() {
-//        require(msg.sender == admin || msg.sender == authorizedUserExternalAccount, "Only admin or authorized user account can call this function");
-//        _;
-//    }
+    ////////////////////
+    // User functions //
+    ////////////////////
 
-//    function setAuthorizedUserExternalAccount(address payable _newExternalAccount) external onlyAdmin {
-//        require(_newExternalAccount != address(0), "New external account cannot be zero address");
-//        authorizedUserExternalAccount = _newExternalAccount;
-//    }
+    function transferFundsAndCreateEscrow(uint _amount) external {
+        erc20TokenContract.transfer(address(escrowContract), _amount);
+
+        escrowContract.createEscrow(_amount);
+    }
+
+    function linkOfferToEscrow(uint _escrowIndex, address _offerAccount, uint _offerIndex) external {
+        require(_offerAccount != address(0), "Offer account cannot be zero address");
+
+        escrowContract.linkOfferToEscrow(_escrowIndex, _offerAccount, _offerIndex);
+    }
+
+    function extendEscrow(uint escrowIndex) external {
+        escrowContract.extendEscrow(escrowIndex);
+    }
+
+    function withdrawEscrowEarly(uint escrowIndex) external {
+        escrowContract.withdrawEscrowEarly(escrowIndex);
+    }
+
+    function withdrawEscrow(uint escrowIndex) external {
+        escrowContract.withdrawEscrowAfterReturn(escrowIndex);
+    }
+
+    //////////////////////
+    // Broker functions //
+    //////////////////////
+
+    function createOffer(
+        address _escrowAccount,
+        uint _escrowIndex,
+        uint _feeBasisPoints
+    ) external {
+        require(_escrowAccount != address(0), "Escrow account cannot be zero address");
+        escrowContract.createOffer(_escrowAccount, _escrowIndex, _feeBasisPoints);
+    }
+
+    function withdrawEscrow(address escrowAccount, uint escrowIndex) external {
+        escrowContract.withdrawEscrowAfterCompletion(escrowAccount, escrowIndex);
+    }
+
 }
