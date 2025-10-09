@@ -9,9 +9,8 @@ import {AuthorizedUserWalletManager} from "./AuthorizedUserWalletManager.sol";
 
 
 contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletManager {
-    uint public basisPointFee; // The fee for using this contract in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
     IERC20 immutable public erc20TokenContract;
-
+    uint public platformFeeBalance;
     uint public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
 
     /// @notice maps the address of the user to their escrows
@@ -19,8 +18,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
     /// @notice maps the address of the broker to their offers
     mapping(address => EscrowStructs.FXEscrowOffer[]) public offers;
 
-    constructor(uint _basisPointFee, address _erc20TokenAddress) {
-        require(_basisPointFee <= 10000, "TransactionRelay: basis point fee must be less than or equal to 10000 (100%)");
+    constructor(address _erc20TokenAddress, address _admin) {
         require(_erc20TokenAddress != address(0), "ERC20 token address cannot be zero");
 
         // Check if the token implements the decimals() function and that it returns 6 decimals
@@ -30,8 +28,7 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
             revert("Token does not implement decimals()");
         }
 
-        admin = payable(msg.sender);
-        basisPointFee = _basisPointFee;
+        admin = payable(_admin);
         erc20TokenContract = IERC20(_erc20TokenAddress);
     }
 
@@ -51,17 +48,19 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
     }
 
     function createOffer(
-        address escrowAccount,
-        uint escrowIndex
+        address _escrowAccount,
+        uint _escrowIndex,
+        uint _feeBasisPoints
     ) external onlyAuthorizedBrokers {
-        EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = escrows[_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
 
         offers[msg.sender].push(
             EscrowStructs.FXEscrowOffer({
-                escrowAccount: escrowAccount,
-                escrowIndex: escrowIndex,
+                escrowAccount: _escrowAccount,
+                escrowIndex: _escrowIndex,
+                feeBasisPoints: _feeBasisPoints,
                 createdAt: block.timestamp
             })
         );
@@ -126,10 +125,17 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         require(escrow.selectedBrokerAccount == msg.sender, "Only the selected broker can withdraw from the escrow");
         require(block.timestamp >= escrow.expirationTimestamp, "Escrow has not yet expired");
 
+        EscrowStructs.FXEscrowOffer storage selectedOffer = offers[escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
+
+        uint platformFee = _calcBasisPointShare(escrow.amount, selectedOffer.feeBasisPoints);
+        uint amountWithdrawn = escrow.amount - platformFee;
+
         escrow.isWithdrawn = true;
 
         // Transfer the escrow amount to the broker
-        erc20TokenContract.transfer(msg.sender, escrow.amount);
+        erc20TokenContract.transfer(msg.sender, amountWithdrawn);
+        // Add the platform fee to the contract's balance
+        platformFeeBalance += platformFee;
     }
 
     function withdrawEscrowEarly(uint escrowIndex) external onlyAuthorizedUsers {
@@ -158,7 +164,14 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         erc20TokenContract.transfer(msg.sender, escrow.amount);
     }
 
-    function isFxEscrowContractTest() external pure returns (bool) {
-        return true; // This contract is a FxEscrowERC20 contract
+    function withdrawFees(address payable _to) external onlyAdmin {
+        require(_to != address(0), "Cannot withdraw to zero address");
+        uint amount = platformFeeBalance;
+        erc20TokenContract.transfer(_to, amount);
+        platformFeeBalance = 0;
+    }
+
+    function _calcBasisPointShare(uint _amount, uint basisPoints) internal pure returns (uint) {
+        return (_amount * basisPoints) / 10000;
     }
 }
