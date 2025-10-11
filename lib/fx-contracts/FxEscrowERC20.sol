@@ -6,19 +6,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {AuthorizedBrokerWalletManager} from "./AuthorizedBrokerWalletManager.sol";
 import {AuthorizedUserWalletManager} from "./AuthorizedUserWalletManager.sol";
+import {FxEscrow} from "./FxEscrow.sol";
 
 
-contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletManager {
+contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletManager, FxEscrow {
     IERC20 immutable public erc20TokenContract;
     uint public platformFeeBalance;
-    uint public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
+    uint immutable public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
+    bytes32 immutable public currency;
 
     /// @notice maps the address of the user to their escrows
     mapping(address => EscrowStructs.FXEscrow[]) public escrows;
     /// @notice maps the address of the broker to their offers
     mapping(address => EscrowStructs.FXEscrowOffer[]) public offers;
 
-    constructor(address _erc20TokenAddress, address _admin) {
+    constructor(address _erc20TokenAddress, address _admin, string memory _currency) {
         require(_erc20TokenAddress != address(0), "ERC20 token address cannot be zero");
 
         // Check if the token implements the decimals() function and that it returns 6 decimals
@@ -30,14 +32,17 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
         admin = payable(_admin);
         erc20TokenContract = IERC20(_erc20TokenAddress);
+        currency = keccak256(bytes(_currency));
     }
 
-    function createEscrow(uint amount) external onlyAuthorizedUsers {
+    function createEscrow(uint _amount) external onlyAuthorizedUsers {
+        uint expiration = block.timestamp + defaultEscrowDuration;
+
         escrows[msg.sender].push(
             EscrowStructs.FXEscrow({
-                amount: amount,
+                amount: _amount,
                 createdAt: block.timestamp,
-                expirationTimestamp: block.timestamp + defaultEscrowDuration,
+                expirationTimestamp: expiration,
                 isWithdrawn: false,
                 isFrozen: false,
                 isReturned: false,
@@ -45,6 +50,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
                 selectedOfferIndex: 0
             })
         );
+
+        emit EscrowCreated(msg.sender, escrows[msg.sender].length, currency, expiration, _amount);
     }
 
     function createOffer(
@@ -64,6 +71,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
                 createdAt: block.timestamp
             })
         );
+
+        emit OfferCreated(msg.sender, offers[msg.sender].length, currency, _escrowAccount, _escrowIndex);
     }
 
     function linkOfferToEscrow(
@@ -79,41 +88,52 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
         escrow.selectedBrokerAccount = _offerAccount;
         escrow.selectedOfferIndex = _offerIndex;
+
+        emit EscrowSelectedOffer(msg.sender, _escrowIndex, currency, _offerAccount, _offerIndex);
     }
 
-    function freezeEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
+    function freezeEscrow(address _escrowAccount, uint _escrowIndex) external onlyAdmin {
+        EscrowStructs.FXEscrow storage escrow = escrows[_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isFrozen, "Escrow is already frozen");
 
         escrow.isFrozen = true;
+
+        emit EscrowFrozen(_escrowAccount, _escrowIndex, currency);
     }
 
-    function defrostEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
+    function defrostEscrow(address _escrowAccount, uint _escrowIndex) external onlyAdmin {
+        EscrowStructs.FXEscrow storage escrow = escrows[_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.isFrozen, "Escrow is not frozen");
 
         escrow.isFrozen = false;
+
+        emit EscrowDefrosted(_escrowAccount, _escrowIndex, currency);
     }
 
-    function returnEscrow(address escrowAccount, uint escrowIndex) external onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[escrowAccount][escrowIndex];
+    function returnEscrow(address _escrowAccount, uint _escrowIndex) external onlyAdmin {
+        EscrowStructs.FXEscrow storage escrow = escrows[_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
 
         escrow.isReturned = true;
         escrow.isFrozen = false; // Unfreeze the escrow if it was frozen
+
+        emit EscrowFundsReturnedToUser(_escrowAccount, _escrowIndex, currency);
     }
 
-    function extendEscrow(uint escrowIndex) external onlyAuthorizedUsers {
-        EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
+    function extendEscrow(uint _escrowIndex) external onlyAuthorizedUsers {
+        EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
         require(escrow.expirationTimestamp < block.timestamp, "Escrow has not yet expired");
 
         // Extend the escrow expiration by the default duration
-        escrow.expirationTimestamp = (block.timestamp + defaultEscrowDuration);
+        uint newExpirationTimestamp = block.timestamp + defaultEscrowDuration;
+        escrow.expirationTimestamp = newExpirationTimestamp;
+
+        emit EscrowExpirationExtended(msg.sender, _escrowIndex, currency);
     }
 
     function withdrawEscrowAfterCompletion(address escrowAccount, uint escrowIndex) external onlyAuthorizedBrokers {
@@ -136,6 +156,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         erc20TokenContract.transfer(msg.sender, amountWithdrawn);
         // Add the platform fee to the contract's balance
         platformFeeBalance += platformFee;
+
+        emit EscrowWithdrawnAfterCompletion(escrowAccount, escrowIndex, currency, msg.sender, amountWithdrawn);
     }
 
     function withdrawEscrowEarly(uint escrowIndex) external onlyAuthorizedUsers {
@@ -149,6 +171,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
         // Transfer the escrow amount back to the user
         erc20TokenContract.transfer(msg.sender, escrow.amount);
+
+        emit EscrowWithdrawnEarly(msg.sender, escrowIndex, currency, msg.sender, escrow.amount);
     }
 
     function withdrawEscrowAfterReturn(uint escrowIndex) external onlyAuthorizedUsers {
@@ -162,6 +186,8 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
 
         // Transfer the escrow amount back to the user
         erc20TokenContract.transfer(msg.sender, escrow.amount);
+
+        emit EscrowWithdrawnAfterReturn(msg.sender, escrowIndex, currency, msg.sender, escrow.amount);
     }
 
     function withdrawFees(address payable _to) external onlyAdmin {
@@ -169,6 +195,10 @@ contract FxEscrowERC20 is AuthorizedBrokerWalletManager, AuthorizedUserWalletMan
         uint amount = platformFeeBalance;
         erc20TokenContract.transfer(_to, amount);
         platformFeeBalance = 0;
+    }
+
+    function getCurrency() external view returns (string memory) {
+        return string(abi.encodePacked(currency));
     }
 
     function _calcBasisPointShare(uint _amount, uint basisPoints) internal pure returns (uint) {

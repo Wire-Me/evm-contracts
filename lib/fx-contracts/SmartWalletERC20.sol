@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {FxEscrowERC20} from "./FxEscrowERC20.sol";
 import {AdminBase} from "./AdminBase.sol";
 
-
 contract SmartWalletERC20 is AdminBase {
     IERC20 immutable public erc20TokenContract;
     FxEscrowERC20 immutable public escrowContract;
@@ -63,4 +62,12 @@ contract SmartWalletERC20 is AdminBase {
         escrowContract.withdrawEscrowAfterCompletion(escrowAccount, escrowIndex);
     }
 
+    /////////////////////////
+    // Universal functions //
+    /////////////////////////
+
+    function withdrawWalletFunds(address to, uint amount) external onlyAdmin {
+        require(to != address(0), "Cannot withdraw to zero address");
+        erc20TokenContract.transfer(to, amount);
+    }
 }
