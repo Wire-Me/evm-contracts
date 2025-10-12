@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import {FxEscrowERC20} from "./FxEscrowERC20.sol";
-import {AdminBase} from "./AdminBase.sol";
+import {FxEscrowERC20} from "../fx-escrow/FxEscrowERC20.sol";
+import {AdminBase} from "../AdminBase.sol";
 
 abstract contract SmartWallet is AdminBase {
     FxEscrowERC20 immutable public escrowContract;

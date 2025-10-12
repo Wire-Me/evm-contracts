@@ -4,8 +4,5 @@ pragma solidity ^0.8.30;
 import {ProxyFxEscrow} from "./ProxyFxEscrow.sol";
 
 contract ProxyFxEscrowERC20USDC is ProxyFxEscrow {
-    address public implementation;
-    address public admin;
-
     constructor(address _impl, address _admin) ProxyFxEscrow(_impl, _admin) {}
 }

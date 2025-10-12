@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import "../EscrowStructs.sol";
+import "../../EscrowStructs.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {FxEscrow} from "./FxEscrow.sol";
 
 
-contract FxEscrowERC20 is FxEscrow {
+abstract contract FxEscrowERC20 is FxEscrow {
     IERC20 immutable public erc20TokenContract;
 
     constructor(address _erc20TokenAddress, address _admin, string memory _currency) {

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {FxEscrowERC20} from "./FxEscrowERC20.sol";
-import {AdminBase} from "./AdminBase.sol";
+import {FxEscrowERC20} from "../fx-escrow/FxEscrowERC20.sol";
+import {AdminBase} from "../AdminBase.sol";
 import {SmartWallet} from "./SmartWallet.sol";
 
 contract SmartWalletNative is SmartWallet {

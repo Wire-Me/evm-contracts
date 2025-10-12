@@ -2,11 +2,11 @@
 pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {FxEscrowERC20} from "./FxEscrowERC20.sol";
-import {AdminBase} from "./AdminBase.sol";
+import {FxEscrowERC20} from "../fx-escrow/FxEscrowERC20.sol";
+import {AdminBase} from "../AdminBase.sol";
 import {SmartWallet} from "./SmartWallet.sol";
 
-contract SmartWalletERC20 is SmartWallet {
+abstract contract SmartWalletERC20 is SmartWallet {
     IERC20 immutable public erc20TokenContract;
 
     constructor(address _escrowContractAddress, address _admin) {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import {AdminBase} from "./AdminBase.sol";
+import {AdminBase} from "../AdminBase.sol";
 
 abstract contract AuthorizedUserWalletManager is AdminBase {
     /// @notice all authorized user wallets who have been approved to create escrows

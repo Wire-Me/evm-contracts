@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import {SmartWalletERC20} from "./SmartWalletERC20.sol";
+import {SmartWalletERC20} from "./smart-wallet/SmartWalletERC20.sol";
 
 // Deprecated
 contract BrokerSmartWalletERC20 is SmartWalletERC20 {
