@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-contract ProxySmartWallet {
+abstract contract ProxySmartWallet {
     address public implementation;
     address public admin;
 
