@@ -6,8 +6,7 @@ import {FxEscrowERC20} from "./FxEscrowERC20.sol";
 import {AdminBase} from "./AdminBase.sol";
 import {SmartWallet} from "./SmartWallet.sol";
 
-contract SmartWalletERC20 is AdminBase, SmartWallet {
-    IERC20 immutable public erc20TokenContract;
+contract SmartWalletNative is AdminBase, SmartWallet {
     FxEscrowERC20 immutable public escrowContract;
 
     constructor(address _escrowContractAddress, address _admin) {
@@ -15,7 +14,6 @@ contract SmartWalletERC20 is AdminBase, SmartWallet {
 
         admin = _admin;
         escrowContract = FxEscrowERC20(_escrowContractAddress);
-        erc20TokenContract = escrowContract.erc20TokenContract();
     }
 
     ////////////////////
@@ -23,7 +21,10 @@ contract SmartWalletERC20 is AdminBase, SmartWallet {
     ////////////////////
 
     function transferFundsAndCreateEscrow(uint _amount) external {
-        erc20TokenContract.transfer(address(escrowContract), _amount);
+        require(address(this).balance >= _amount, "Not enough balance");
+
+        (bool success,) = payable(address(escrowContract)).call{value: _amount}("");
+        require(success, "Transfer failed");
 
         escrowContract.createEscrow(_amount);
     }
@@ -69,6 +70,9 @@ contract SmartWalletERC20 is AdminBase, SmartWallet {
 
     function withdrawWalletFunds(address payable _to, uint _amount) external onlyAdmin {
         require(_to != address(0), "Cannot withdraw to zero address");
-        erc20TokenContract.transfer(_to, _amount);
+        require(address(this).balance >= _amount, "Not enough balance");
+
+        (bool success,) = _to.call{value: _amount}("");
+        require(success, "Transfer failed");
     }
 }
