@@ -28,4 +28,6 @@ contract FxEscrowERC20 is FxEscrow {
     function transferFundsFromContract(address _to, uint _amount) internal override {
         erc20TokenContract.transfer(_to, _amount);
     }
+
+    fallback() external {}
 }

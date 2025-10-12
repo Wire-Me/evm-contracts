@@ -19,4 +19,6 @@ contract FxEscrowNative is FxEscrow {
         (bool success,) = payable(_to).call{value: _amount}("");
         require(success, "Transfer failed");
     }
+
+    fallback() external payable {}
 }
