@@ -4,9 +4,8 @@ pragma solidity ^0.8.30;
 import {SmartWalletERC20} from "./smart-wallet/SmartWalletERC20.sol";
 
 // Deprecated
-contract BrokerSmartWalletERC20 is SmartWalletERC20 {
-    constructor(address _escrowContractAddress, address _authorizedUserExternalWallet)
-        SmartWalletERC20(_escrowContractAddress, _authorizedUserExternalWallet) {}
+contract BrokerSmartWalletERC20 {
+    constructor(address _escrowContractAddress, address _authorizedUserExternalWallet){}
 
 //    function createOffer(
 //        address _escrowAccount,

@@ -14,5 +14,11 @@ contract FxEscrowNative is FxEscrow {
         require(success, "Transfer failed");
     }
 
+    // Allow the proxy contract to receive native currency
     fallback() external payable {}
+
+    // Do not allow direct sends to the contract
+    receive() payable external {
+        revert("Direct deposits not allowed");
+    }
 }

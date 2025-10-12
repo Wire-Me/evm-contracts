@@ -2,16 +2,19 @@
 pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {FxEscrowERC20} from "../fx-escrow/FxEscrowERC20.sol";
 import {AdminBase} from "../AdminBase.sol";
 import {SmartWallet} from "./SmartWallet.sol";
+import {FxEscrowNative} from "../fx-escrow/FxEscrowNative.sol";
+import {FxEscrow} from "../fx-escrow/FxEscrow.sol";
 
 contract SmartWalletNative is SmartWallet {
-    constructor(address _escrowContractAddress, address _admin) {
+    FxEscrowNative immutable public _escrowContract;
+
+    constructor(address payable _escrowContractAddress, address _admin) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
         admin = _admin;
-        escrowContract = FxEscrowERC20(_escrowContractAddress);
+        _escrowContract = FxEscrowNative(_escrowContractAddress);
     }
 
     function transferFundsFromContract(address _to, uint _amount) internal override {
@@ -21,5 +24,16 @@ contract SmartWalletNative is SmartWallet {
         require(success, "Transfer failed");
     }
 
+    // override the getter
+    function escrowContract() public view override returns (FxEscrow) {
+        return _escrowContract;
+    }
+
+    // Allow the proxy contract to receive native currency
     fallback() external payable {}
+
+    // Do not allow direct sends to the contract
+    receive() payable external {
+        revert("Direct deposits not allowed");
+    }
 }

@@ -29,5 +29,11 @@ abstract contract FxEscrowERC20 is FxEscrow {
         erc20TokenContract.transfer(_to, _amount);
     }
 
+    // Do not allow direct sends to the proxy contract
     fallback() external {}
+
+    // Do not allow direct sends to the contract
+    receive() payable external {
+        revert("Direct deposits not allowed");
+    }
 }

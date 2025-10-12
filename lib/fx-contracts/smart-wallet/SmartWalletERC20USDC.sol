@@ -4,6 +4,6 @@ pragma solidity ^0.8.30;
 import {SmartWalletERC20} from "./SmartWalletERC20.sol";
 
 contract SmartWalletERC20USDC is SmartWalletERC20 {
-    constructor(address _escrowContractAddress, address _admin)
+    constructor(address payable _escrowContractAddress, address _admin)
     SmartWalletERC20(_escrowContractAddress, _admin) {}
 }
