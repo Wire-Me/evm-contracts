@@ -33,7 +33,7 @@ abstract contract SmartWallet is AdminBase {
         escrowContract().withdrawEscrowEarly(_escrowIndex);
     }
 
-    function withdrawEscrow(uint _escrowIndex) external {
+    function withdrawEscrowAfterReturn(uint _escrowIndex) external {
         escrowContract().withdrawEscrowAfterReturn(_escrowIndex);
     }
 
@@ -50,7 +50,7 @@ abstract contract SmartWallet is AdminBase {
         escrowContract().createOffer(_escrowAccount, _escrowIndex, _feeBasisPoints);
     }
 
-    function withdrawEscrow(address _escrowAccount, uint _escrowIndex) external {
+    function withdrawEscrowAfterCompletion(address _escrowAccount, uint _escrowIndex) external {
         escrowContract().withdrawEscrowAfterCompletion(_escrowAccount, _escrowIndex);
     }
 
