@@ -58,12 +58,7 @@ abstract contract SmartWallet is AdminBase {
     // Universal functions //
     /////////////////////////
 
-//    function withdrawWalletFunds(address payable _to, uint _amount) external onlyAdmin {
-//        require(_to != address(0), "Cannot withdraw to zero address");
-//        transferFundsFromContract(_to, _amount);
-//    }
-
-    function withdrawWalletFunds(address payable _to, uint _amount) external {
+    function withdrawWalletFunds(address payable _to, uint _amount) external onlyAdmin {
         require(_to != address(0), "Cannot withdraw to zero address");
         transferFundsFromContract(_to, _amount);
     }
