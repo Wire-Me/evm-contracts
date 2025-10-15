@@ -17,7 +17,6 @@ abstract contract ProxySmartWallet {
     }
 
     fallback() external payable {
-        require(msg.sender == admin, "Only admin accounts can call this function");
         require(implementation != address(0), "No implementation");
         address impl = implementation;
 
