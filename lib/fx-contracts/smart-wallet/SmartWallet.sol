@@ -5,8 +5,6 @@ import {FxEscrow} from "../fx-escrow/FxEscrow.sol";
 import {AdminBase} from "../AdminBase.sol";
 
 abstract contract SmartWallet is AdminBase {
-    uint public test = 0;
-
     function transferFundsFromContract(address _to, uint _amount) internal virtual;
 
     function escrowContract() public view virtual returns (FxEscrow);
