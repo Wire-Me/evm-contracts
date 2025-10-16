@@ -105,7 +105,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
             })
         );
 
-        emit EscrowCreated(msg.sender, escrows[msg.sender].length, currency, expiration, _amount);
+        emit EscrowCreated(msg.sender, escrows[msg.sender].length - 1, currency, expiration, _amount);
     }
 
     function createOffer(
@@ -126,7 +126,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
             })
         );
 
-        emit OfferCreated(msg.sender, offers[msg.sender].length, currency, _escrowAccount, _escrowIndex);
+        emit OfferCreated(msg.sender, offers[msg.sender].length - 1, currency, _escrowAccount, _escrowIndex);
     }
 
     function linkOfferToEscrow(
