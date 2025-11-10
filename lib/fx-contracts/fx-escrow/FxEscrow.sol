@@ -15,7 +15,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
     /// @notice maps the address of the broker to their offers
     mapping(address => EscrowStructs.FXEscrowOffer[]) public offers;
 
-    function transferFundsFromContract(address _to, uint _amount) internal virtual ;
+    function transferFundsFromContract(address _to, uint _amount) internal virtual;
 
     event EscrowCreated(
         address indexed _creatingUser,
@@ -62,7 +62,8 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
     event EscrowExpirationExtended(
         address indexed _creatorOfEscrow,
         uint indexed _escrowIndex,
-        bytes32 indexed _currency
+        bytes32 indexed _currency,
+        uint _newExpirationTimestamp
     );
 
     event EscrowWithdrawnAfterCompletion(
@@ -187,7 +188,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         uint newExpirationTimestamp = block.timestamp + defaultEscrowDuration;
         escrow.expirationTimestamp = newExpirationTimestamp;
 
-        emit EscrowExpirationExtended(msg.sender, _escrowIndex, currency);
+        emit EscrowExpirationExtended(msg.sender, _escrowIndex, currency, newExpirationTimestamp);
     }
 
     function withdrawEscrowAfterCompletion(address escrowAccount, uint escrowIndex) external onlyAuthorizedBrokers {
