@@ -143,12 +143,15 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
 
         // Defrost the escrow if it is frozen
         if (escrow.isFrozen) {
-            defrostEscrow(msg.sender, _escrowIndex);
+            escrow.isFrozen = false;
+            emit EscrowDefrosted(msg.sender, _escrowIndex, currency);
         }
 
         // Extend the escrow expiration if it is past half of its duration
         if (block.timestamp > (escrow.expirationTimestamp - (defaultEscrowDuration / 2))) {
-            extendEscrow(_escrowIndex);
+            uint newExpirationTimestamp = block.timestamp + defaultEscrowDuration;
+            escrow.expirationTimestamp = newExpirationTimestamp;
+            emit EscrowExpirationExtended(msg.sender, _escrowIndex, currency, newExpirationTimestamp);
         }
 
         escrow.selectedBrokerAccount = _offerAccount;
