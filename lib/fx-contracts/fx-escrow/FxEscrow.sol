@@ -141,6 +141,16 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(offer.createdAt > 0, "Offer is not initialized");
 
+        // Defrost the escrow if it is frozen
+        if (escrow.isFrozen) {
+            defrostEscrow(msg.sender, _escrowIndex);
+        }
+
+        // Extend the escrow expiration if it is past half of its duration
+        if (block.timestamp > (escrow.expirationTimestamp - (defaultEscrowDuration / 2))) {
+            extendEscrow(_escrowIndex);
+        }
+
         escrow.selectedBrokerAccount = _offerAccount;
         escrow.selectedOfferIndex = _offerIndex;
 
@@ -157,7 +167,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         emit EscrowFrozen(_escrowAccount, _escrowIndex, currency);
     }
 
-    function defrostEscrow(address _escrowAccount, uint _escrowIndex) external onlyAdmin {
+    function defrostEscrow(address _escrowAccount, uint _escrowIndex) public onlyAdmin {
         EscrowStructs.FXEscrow storage escrow = escrows[_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.isFrozen, "Escrow is not frozen");
@@ -178,7 +188,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         emit EscrowFundsReturnedToUser(_escrowAccount, _escrowIndex, currency);
     }
 
-    function extendEscrow(uint _escrowIndex) external onlyAuthorizedUsers {
+    function extendEscrow(uint _escrowIndex) public onlyAuthorizedUsers {
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
