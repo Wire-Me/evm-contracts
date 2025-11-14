@@ -183,7 +183,7 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
 
         escrow.isReturned = true;
-        escrow.isFrozen = false; // Unfreeze the escrow if it was frozen
+        escrow.isFrozen = false; // Unfreeze the escrow if it was frozen (most of the time it will be so no `if` check to save gas)
 
         emit EscrowFundsReturnedToUser(_escrowAccount, _escrowIndex, currency);
     }
@@ -228,7 +228,6 @@ abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalle
         EscrowStructs.FXEscrow storage escrow = escrows[msg.sender][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
-        require(!escrow.isFrozen, "Escrow is frozen and cannot be withdrawn");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
 
         escrow.isWithdrawn = true;
