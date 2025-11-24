@@ -10,6 +10,8 @@ import {FxEscrow} from "../fx-escrow/FxEscrow.sol";
 contract SmartWalletNative is SmartWallet {
     FxEscrowNative immutable public _escrowContract;
 
+    event TransferSuccessful(address indexed from, address indexed to, uint amount);
+
     constructor(address payable _escrowContractAddress, address _admin) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
@@ -22,6 +24,8 @@ contract SmartWalletNative is SmartWallet {
 
         (bool success,) = payable(_to).call{value: _amount}("");
         require(success, "Transfer failed");
+
+        emit TransferSuccessful(address(this), _to, _amount);
     }
 
     // override the getter
