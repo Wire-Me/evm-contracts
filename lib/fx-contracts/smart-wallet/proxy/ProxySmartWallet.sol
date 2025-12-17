@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-abstract contract ProxySmartWallet {
-    address public implementation;
-    address public admin;
+import {SmartWalletStorage} from "../SmartWalletStorage.sol";
 
-    constructor(address _impl, address _admin) {
-        admin = _admin;
+abstract contract ProxySmartWallet is SmartWalletStorage {
+    constructor(address _impl, address _admin, address _authorizedEOA) {
         implementation = _impl;
+        admin = _admin;
+        authorizedEOA = _authorizedEOA;
     }
 
     function setImplementation(address _impl) external {
-        // add access control if you want
         require(msg.sender == admin, "Only admin account can call this function");
         implementation = _impl;
+    }
+
+    function setAuthorizedEOA(address _eoa) external {
+        require(msg.sender == admin, "Only admin account can call this function");
+        authorizedEOA = _eoa;
     }
 
     fallback() external payable {

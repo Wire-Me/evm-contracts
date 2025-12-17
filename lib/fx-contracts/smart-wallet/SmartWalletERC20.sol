@@ -11,10 +11,9 @@ abstract contract SmartWalletERC20 is SmartWallet {
     IERC20 immutable public erc20TokenContract;
     FxEscrowERC20 immutable public _escrowContract;
 
-    constructor(address payable _escrowContractAddress, address _admin) {
+    constructor(address payable _escrowContractAddress) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
-        admin = _admin;
         _escrowContract = FxEscrowERC20(_escrowContractAddress);
         erc20TokenContract = _escrowContract.erc20TokenContract();
     }

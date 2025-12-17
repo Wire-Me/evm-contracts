@@ -12,10 +12,9 @@ contract SmartWalletNative is SmartWallet {
 
     event TransferSuccessful(address indexed from, address indexed to, uint amount);
 
-    constructor(address payable _escrowContractAddress, address _admin) {
+    constructor(address payable _escrowContractAddress) {
         require(_escrowContractAddress != address(0), "escrow address cannot be zero");
 
-        admin = _admin;
         _escrowContract = FxEscrowNative(_escrowContractAddress);
     }
 
