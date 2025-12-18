@@ -4,5 +4,5 @@ pragma solidity ^0.8.30;
 import {ProxySmartWallet} from "./ProxySmartWallet.sol";
 
 contract ProxySmartWalletERC20USDT is ProxySmartWallet {
-    constructor(address _impl, address _admin) ProxySmartWallet(_impl, _admin) {}
+    constructor(address _impl, address _admin, address _authorizedEOA) ProxySmartWallet(_impl, _admin, _authorizedEOA) {}
 }
