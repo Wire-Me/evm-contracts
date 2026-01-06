@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-abstract contract ProxyFxEscrow {
-    address public implementation;
-    address public admin;
+import {FxEscrowStorage} from "../FxEscrowStorage.sol";
 
+abstract contract ProxyFxEscrow is FxEscrowStorage {
     constructor(address _impl, address _admin) {
         admin = _admin;
         implementation = _impl;
@@ -26,8 +25,8 @@ abstract contract ProxyFxEscrow {
             returndatacopy(0, 0, returndatasize())
 
             switch success
-            case 0 { revert(0, returndatasize()) }
-            default { return(0, returndatasize()) }
+            case 0 {revert(0, returndatasize())}
+            default {return (0, returndatasize())}
         }
     }
 }

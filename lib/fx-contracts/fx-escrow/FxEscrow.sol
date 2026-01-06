@@ -4,16 +4,46 @@ pragma solidity ^0.8.30;
 import "../../EscrowStructs.sol";
 import {AuthorizedBrokerWalletManager} from "./AuthorizedBrokerWalletManager.sol";
 import {AuthorizedUserWalletManager} from "./AuthorizedUserWalletManager.sol";
+import {FxEscrowStorage} from "./FxEscrowStorage.sol";
 
-abstract contract FxEscrow is AuthorizedBrokerWalletManager, AuthorizedUserWalletManager {
-    uint public platformFeeBalance;
-    uint immutable public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
-    bytes32 immutable public currency;
+abstract contract FxEscrow is FxEscrowStorage {
+    // Admin modifier
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Sender is not an authorized admin account");
+        _;
+    }
 
-    /// @notice maps the address of the user to their escrows
-    mapping(address => EscrowStructs.FXEscrow[]) public escrows;
-    /// @notice maps the address of the broker to their offers
-    mapping(address => EscrowStructs.FXEscrowOffer[]) public offers;
+    // Authorized users
+    modifier onlyAuthorizedUsers() {
+        require(authorizedUserWallets[msg.sender], "Sender is not an authorized user wallet");
+        _;
+    }
+
+    function addAuthorizedUser(address user) external onlyAdmin {
+        require(user != address(0), "User address cannot be zero");
+        authorizedUserWallets[user] = true;
+    }
+
+    function removeAuthorizedUser(address user) external onlyAdmin {
+        require(user != address(0), "User address cannot be zero");
+        authorizedUserWallets[user] = false;
+    }
+
+    // Authorized brokers
+    modifier onlyAuthorizedBrokers() {
+        require(authorizedBrokerWallets[msg.sender], "Sender is not an authorized broker wallet");
+        _;
+    }
+
+    function addAuthorizedBroker(address broker) external onlyAdmin {
+        require(broker != address(0), "Broker address cannot be zero");
+        authorizedBrokerWallets[broker] = true;
+    }
+
+    function removeAuthorizedBroker(address broker) external onlyAdmin {
+        require(broker != address(0), "Broker address cannot be zero");
+        authorizedBrokerWallets[broker] = false;
+    }
 
     function transferFundsFromContract(address _to, uint _amount) internal virtual;
 
