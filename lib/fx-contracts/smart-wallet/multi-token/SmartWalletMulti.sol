@@ -27,7 +27,6 @@ contract SmartWalletMulti is AbstractSmartWalletMulti {
             IERC20 erc20TokenContract = IERC20(config.erc20TokenContracts(_token));
             erc20TokenContract.transfer(_to, _amount);
         }
-
     }
 
     // override the getter
