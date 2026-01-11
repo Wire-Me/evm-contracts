@@ -126,6 +126,7 @@ abstract contract FxEscrow is FxEscrowStorage {
         escrows[msg.sender].push(
             EscrowStructs.FXEscrow({
                 amount: _amount,
+                token: currency,
                 createdAt: block.timestamp,
                 expirationTimestamp: expiration,
                 isWithdrawn: false,

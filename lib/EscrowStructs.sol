@@ -34,6 +34,8 @@ library EscrowStructs {
     struct FXEscrow {
         /// @notice the amount of funds held in escrow
         uint amount;
+        /// @notice the currency/token of the escrow
+        bytes32 token;
         /// @notice the epoch timestamp (seconds) at which the escrow was created
         uint createdAt;
         /// @notice the epoch timestamp (seconds) at which the escrow will expire
