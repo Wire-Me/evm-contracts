@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import {FxEscrow} from "../../fx-escrow/FxEscrow.sol";
+import "../../fx-escrow/multi-token/FxEscrowMulti.sol";
 import {SmartWalletMultiStorage} from "./SmartWalletMultiStorage.sol";
 
 abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
     function transferFundsFromWallet(bytes32 _token, address _to, uint _amount) internal virtual;
 
-    function escrowContract(bytes32 _token) public view virtual returns (FxEscrow);
+    function escrowContract() public view virtual returns (FxEscrowMulti);
 
     modifier onlyAdminOrAuthorizedEOA() {
         require(msg.sender == admin || msg.sender == authorizedEOA, "Sender is not an authorized admin account or authorized EOA");
@@ -24,26 +24,26 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
     ////////////////////
 
     function transferFundsAndCreateEscrow(bytes32 _token, uint _amount) external onlyAdminOrAuthorizedEOA {
-        FxEscrow fx = escrowContract(_token);
+        FxEscrowMulti fx = escrowContract();
         transferFundsFromWallet(_token, address(fx), _amount);
 
-        fx.createEscrow(_amount);
+        fx.createEscrow(_token, _amount);
     }
 
     function linkOfferToEscrow(bytes32 _token, uint _escrowIndex, address _offerAccount, uint _offerIndex) external onlyAdminOrAuthorizedEOA {
-        escrowContract(_token).linkOfferToEscrow(_escrowIndex, _offerAccount, _offerIndex);
+        escrowContract().linkOfferToEscrow(_token, _escrowIndex, _offerAccount, _offerIndex);
     }
 
     function extendEscrow(bytes32 _token, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
-        escrowContract(_token).extendEscrow(_escrowIndex);
+        escrowContract().extendEscrow(_token, _escrowIndex);
     }
 
     function withdrawEscrowEarly(bytes32 _token, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
-        escrowContract(_token).withdrawEscrowEarly(_escrowIndex);
+        escrowContract().withdrawEscrowEarly(_token, _escrowIndex);
     }
 
     function withdrawEscrowAfterReturn(bytes32 _token, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
-        escrowContract(_token).withdrawEscrowAfterReturn(_escrowIndex);
+        escrowContract().withdrawEscrowAfterReturn(_token,_escrowIndex);
     }
 
     //////////////////////
@@ -57,11 +57,11 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         uint _feeBasisPoints
     ) external onlyAdmin {
         require(_escrowAccount != address(0), "Escrow account cannot be zero address");
-        escrowContract(_token).createOffer(_escrowAccount, _escrowIndex, _feeBasisPoints);
+        escrowContract().createOffer(_token,_escrowAccount, _escrowIndex, _feeBasisPoints);
     }
 
     function withdrawEscrowAfterCompletion(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
-        escrowContract(_token).withdrawEscrowAfterCompletion(_escrowAccount, _escrowIndex);
+        escrowContract().withdrawEscrowAfterCompletion(_token,_escrowAccount, _escrowIndex);
     }
 
     /////////////////////////
