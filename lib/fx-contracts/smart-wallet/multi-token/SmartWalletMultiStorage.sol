@@ -8,4 +8,5 @@ abstract contract SmartWalletMultiStorage {
     address public admin;
     address public authorizedEOA;
     WalletConfig public config;
+    bytes32 immutable public nativeToken = keccak256("NATIVE");
 }
