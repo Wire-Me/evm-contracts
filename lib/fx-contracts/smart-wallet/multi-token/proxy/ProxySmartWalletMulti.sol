@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import {SmartWalletMultiStorage} from "../SmartWalletMultiStorage.sol";
 
-abstract contract ProxySmartWalletMulti is SmartWalletMultiStorage {
+contract ProxySmartWalletMulti is SmartWalletMultiStorage {
     constructor(address _impl, address _admin, address _authorizedEOA) {
         implementation = _impl;
         admin = _admin;
@@ -30,8 +30,10 @@ abstract contract ProxySmartWalletMulti is SmartWalletMultiStorage {
             returndatacopy(0, 0, returndatasize())
 
             switch success
-            case 0 { revert(0, returndatasize()) }
-            default { return(0, returndatasize()) }
+            case 0 {revert(0, returndatasize())}
+            default {return (0, returndatasize())}
         }
     }
+
+    receive() external payable {}
 }
