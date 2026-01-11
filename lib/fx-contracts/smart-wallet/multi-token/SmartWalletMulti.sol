@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
+import "../../fx-escrow/multi-token/FxEscrowMulti.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AbstractSmartWalletMulti} from "./AbstractSmartWalletMulti.sol";
 import {FxEscrow} from "../../fx-escrow/FxEscrow.sol";
@@ -16,7 +17,7 @@ contract SmartWalletMulti is AbstractSmartWalletMulti {
     }
 
     function transferFundsFromWallet(bytes32 _token, address _to, uint _amount) internal override {
-        if (_token == keccak256("NATIVE")) {
+        if (_token == nativeToken) {
             require(address(this).balance >= _amount, "Insufficient balance in contract");
 
             (bool success,) = payable(_to).call{value: _amount}("");
@@ -30,8 +31,8 @@ contract SmartWalletMulti is AbstractSmartWalletMulti {
     }
 
     // override the getter
-    function escrowContract(bytes32 _token) public view override returns (FxEscrow) {
-        return FxEscrow(config.fxEscrowContracts(_token));
+    function escrowContract() public view override returns (FxEscrowMulti) {
+        return FxEscrowMulti(config.fxEscrowMultiContract());
     }
 
     // Allow the proxy contract to receive native currency
