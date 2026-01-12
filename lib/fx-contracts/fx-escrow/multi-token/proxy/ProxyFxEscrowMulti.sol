@@ -2,11 +2,13 @@
 pragma solidity ^0.8.30;
 
 import "../FxEscrowMultiStorage.sol";
+import "../configuration/EscrowConfig.sol";
 
 contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
-    constructor(address _impl, address _admin) {
+    constructor(address _impl, address _admin, address _config) {
         implementation = _impl;
         admin = _admin;
+        config = EscrowConfig(_config);
     }
 
     function setImplementation(address _impl) external {
