@@ -7,6 +7,8 @@ import {FxEscrowMultiStorage} from "./FxEscrowMultiStorage.sol";
 import {EscrowConfig} from "./configuration/EscrowConfig.sol";
 
 abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
+    bytes32 internal constant NATIVE_TOKEN = keccak256("NATIVE");
+
     // Admin modifier
     modifier onlyAdmin() {
         require(msg.sender == admin, "Sender is not an authorized admin account");
@@ -17,6 +19,10 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     modifier onlyAuthorizedUsers() {
         require(authorizedUserWallets[msg.sender], "Sender is not an authorized user wallet");
         _;
+    }
+
+    function isAuthorizedUser(address user) external view returns (bool) {
+        return authorizedUserWallets[user];
     }
 
     function addAuthorizedUser(address user) external onlyAdmin {
@@ -35,6 +41,10 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         _;
     }
 
+    function isAuthorizedBroker(address broker) external view returns (bool) {
+        return authorizedBrokerWallets[broker];
+    }
+
     function addAuthorizedBroker(address broker) external onlyAdmin {
         require(broker != address(0), "Broker address cannot be zero");
         authorizedBrokerWallets[broker] = true;
@@ -46,7 +56,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function transferFundsFromContract(bytes32 _token, address _to, uint _amount) internal {
-        if (_token == nativeToken) {
+        if (_token == NATIVE_TOKEN) {
             require(address(this).balance >= _amount, "Insufficient balance in contract");
 
             (bool success,) = payable(_to).call{value: _amount}("");
@@ -133,6 +143,22 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         address _withdrawnTo,
         uint _amountWithdrawn
     );
+
+    function getEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external view returns (EscrowStructs.FXEscrow memory) {
+        return escrows[_token][_escrowAccount][_escrowIndex];
+    }
+
+    function getOffer(bytes32 _token, address _offerAccount, uint _offerIndex) external view returns (EscrowStructs.FXEscrowOffer memory) {
+        return offers[_token][_offerAccount][_offerIndex];
+    }
+
+    function getErc20ContractAddress(bytes32 _token) external view returns (address) {
+        return config.erc20TokenContracts(_token);
+    }
+
+    function getPlatformFeeBalance(bytes32 _token) external view returns (uint) {
+        return platformFeeBalances[_token];
+    }
 
     function createEscrow(bytes32 _token, uint _amount) external onlyAuthorizedUsers {
         uint expiration = block.timestamp + defaultEscrowDuration;

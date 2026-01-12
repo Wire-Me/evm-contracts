@@ -5,21 +5,21 @@ import "../../../EscrowStructs.sol";
 import {EscrowConfig} from "./configuration/EscrowConfig.sol";
 
 abstract contract FxEscrowMultiStorage {
-    address public implementation;
-    address public admin;
+    address internal implementation;
+    address internal admin;
 
-    bytes32 immutable public nativeToken = keccak256("NATIVE");
-
-    mapping(bytes32 => uint) public platformFeeBalances;
+    mapping(bytes32 => uint) internal platformFeeBalances;
     uint immutable public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
 
-    mapping(address => bool) public authorizedUserWallets;
-    mapping(address => bool) public authorizedBrokerWallets;
+    mapping(address => bool) internal authorizedUserWallets;
+    mapping(address => bool) internal authorizedBrokerWallets;
 
     /// @notice maps the address of the user to their escrows for a given token
-    mapping(bytes32 => mapping(address => EscrowStructs.FXEscrow[])) public escrows;
+    mapping(bytes32 => mapping(address => EscrowStructs.FXEscrow[])) internal escrows;
     /// @notice maps the address of the broker to their offers for a given token
-    mapping(bytes32 => mapping(address => EscrowStructs.FXEscrowOffer[])) public offers;
+    mapping(bytes32 => mapping(address => EscrowStructs.FXEscrowOffer[])) internal offers;
 
-    EscrowConfig public config;
+    EscrowConfig internal config;
+
+    uint256[50] private __gap;
 }
