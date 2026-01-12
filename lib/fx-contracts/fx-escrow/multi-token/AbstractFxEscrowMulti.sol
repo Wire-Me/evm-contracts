@@ -160,6 +160,14 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         return _platformFeeBalances[_token];
     }
 
+    function getAdmin() external view returns (address) {
+        return _admin;
+    }
+
+    function getImplementation() external view returns (address) {
+        return _implementation;
+    }
+
     function createEscrow(bytes32 _token, uint _amount) external onlyAuthorizedUsers {
         uint expiration = block.timestamp + defaultEscrowDuration;
 

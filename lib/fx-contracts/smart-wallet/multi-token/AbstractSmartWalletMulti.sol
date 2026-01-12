@@ -44,6 +44,14 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         return _config.fxEscrowMultiContract();
     }
 
+    function getAdmin() external view returns (address) {
+        return _admin;
+    }
+
+    function getImplementation() external view returns (address) {
+        return _implementation;
+    }
+
     ////////////////////
     // User functions //
     ////////////////////
