@@ -5,10 +5,10 @@ import {SmartWalletMultiStorage} from "../SmartWalletMultiStorage.sol";
 import "../configuration/WalletConfig.sol";
 
 contract ProxySmartWalletMulti is SmartWalletMultiStorage {
-    constructor(address _impl, address _admin, address _walletConfig) {
-        _implementation = _impl;
-        _admin = _admin;
-        _config = WalletConfig(_walletConfig);
+    constructor(address _implementationAddress, address _adminAddress, address _walletConfigAddress) {
+        _implementation = _implementationAddress;
+        _admin = _adminAddress;
+        _config = WalletConfig(_walletConfigAddress);
     }
 
     fallback() external payable {

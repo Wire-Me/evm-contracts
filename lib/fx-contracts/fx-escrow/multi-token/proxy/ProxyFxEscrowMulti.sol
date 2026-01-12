@@ -5,10 +5,10 @@ import "../FxEscrowMultiStorage.sol";
 import "../configuration/EscrowConfig.sol";
 
 contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
-    constructor(address _impl, address _admin, address _config) {
-        _implementation = _impl;
-        _admin = _admin;
-        _config = EscrowConfig(_config);
+    constructor(address _implementationAddress, address _adminAddress, address _escrowConfigAddress) {
+        _implementation = _implementationAddress;
+        _admin = _adminAddress;
+        _config = EscrowConfig(_escrowConfigAddress);
     }
 
     function setImplementation(address _impl) external {
