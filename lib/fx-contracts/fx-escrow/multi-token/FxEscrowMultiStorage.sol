@@ -19,7 +19,7 @@ abstract contract FxEscrowMultiStorage {
     /// @notice maps the address of the broker to their offers for a given token
     mapping(bytes32 => mapping(address => EscrowStructs.FXEscrowOffer[])) internal _offers;
 
-    EscrowConfig internal config;
+    EscrowConfig internal _config;
 
     uint256[50] private __gap;
 }

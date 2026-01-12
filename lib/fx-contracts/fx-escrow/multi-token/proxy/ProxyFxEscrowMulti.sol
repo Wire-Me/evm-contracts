@@ -8,7 +8,7 @@ contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
     constructor(address _impl, address _admin, address _config) {
         _implementation = _impl;
         _admin = _admin;
-        config = EscrowConfig(_config);
+        _config = EscrowConfig(_config);
     }
 
     function setImplementation(address _impl) external {

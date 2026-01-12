@@ -64,7 +64,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
 
             emit TransferSuccessful(address(this), _to, _amount);
         } else {
-            IERC20 erc20TokenContract = IERC20(config.erc20TokenContracts(_token));
+            IERC20 erc20TokenContract = IERC20(_config.erc20TokenContracts(_token));
             erc20TokenContract.transfer(_to, _amount);
         }
     }
@@ -153,7 +153,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function getErc20ContractAddress(bytes32 _token) external view returns (address) {
-        return config.erc20TokenContracts(_token);
+        return _config.erc20TokenContracts(_token);
     }
 
     function getPlatformFeeBalance(bytes32 _token) external view returns (uint) {
@@ -346,7 +346,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
 
     function setConfigAddress(address _newConfigAddress) external onlyAdmin {
         require(_newConfigAddress != address(0), "New config address cannot be zero");
-        config = EscrowConfig(_newConfigAddress);
+        _config = EscrowConfig(_newConfigAddress);
     }
 
     function _calcBasisPointShare(uint _amount, uint basisPoints) internal pure returns (uint) {
