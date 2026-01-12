@@ -11,48 +11,48 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
 
     // Admin modifier
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Sender is not an authorized admin account");
+        require(msg.sender == _admin, "Sender is not an authorized admin account");
         _;
     }
 
     // Authorized users
     modifier onlyAuthorizedUsers() {
-        require(authorizedUserWallets[msg.sender], "Sender is not an authorized user wallet");
+        require(_authorizedUserWallets[msg.sender], "Sender is not an authorized user wallet");
         _;
     }
 
     function isAuthorizedUser(address user) external view returns (bool) {
-        return authorizedUserWallets[user];
+        return _authorizedUserWallets[user];
     }
 
     function addAuthorizedUser(address user) external onlyAdmin {
         require(user != address(0), "User address cannot be zero");
-        authorizedUserWallets[user] = true;
+        _authorizedUserWallets[user] = true;
     }
 
     function removeAuthorizedUser(address user) external onlyAdmin {
         require(user != address(0), "User address cannot be zero");
-        authorizedUserWallets[user] = false;
+        _authorizedUserWallets[user] = false;
     }
 
     // Authorized brokers
     modifier onlyAuthorizedBrokers() {
-        require(authorizedBrokerWallets[msg.sender], "Sender is not an authorized broker wallet");
+        require(_authorizedBrokerWallets[msg.sender], "Sender is not an authorized broker wallet");
         _;
     }
 
     function isAuthorizedBroker(address broker) external view returns (bool) {
-        return authorizedBrokerWallets[broker];
+        return _authorizedBrokerWallets[broker];
     }
 
     function addAuthorizedBroker(address broker) external onlyAdmin {
         require(broker != address(0), "Broker address cannot be zero");
-        authorizedBrokerWallets[broker] = true;
+        _authorizedBrokerWallets[broker] = true;
     }
 
     function removeAuthorizedBroker(address broker) external onlyAdmin {
         require(broker != address(0), "Broker address cannot be zero");
-        authorizedBrokerWallets[broker] = false;
+        _authorizedBrokerWallets[broker] = false;
     }
 
     function transferFundsFromContract(bytes32 _token, address _to, uint _amount) internal {
@@ -145,11 +145,11 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     );
 
     function getEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external view returns (EscrowStructs.FXEscrow memory) {
-        return escrows[_token][_escrowAccount][_escrowIndex];
+        return _escrows[_token][_escrowAccount][_escrowIndex];
     }
 
     function getOffer(bytes32 _token, address _offerAccount, uint _offerIndex) external view returns (EscrowStructs.FXEscrowOffer memory) {
-        return offers[_token][_offerAccount][_offerIndex];
+        return _offers[_token][_offerAccount][_offerIndex];
     }
 
     function getErc20ContractAddress(bytes32 _token) external view returns (address) {
@@ -157,13 +157,13 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function getPlatformFeeBalance(bytes32 _token) external view returns (uint) {
-        return platformFeeBalances[_token];
+        return _platformFeeBalances[_token];
     }
 
     function createEscrow(bytes32 _token, uint _amount) external onlyAuthorizedUsers {
         uint expiration = block.timestamp + defaultEscrowDuration;
 
-        escrows[_token][msg.sender].push(
+        _escrows[_token][msg.sender].push(
             EscrowStructs.FXEscrow({
                 amount: _amount,
                 token: _token,
@@ -177,7 +177,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             })
         );
 
-        emit EscrowCreated(msg.sender, escrows[_token][msg.sender].length - 1, _token, expiration, _amount);
+        emit EscrowCreated(msg.sender, _escrows[_token][msg.sender].length - 1, _token, expiration, _amount);
     }
 
     function createOffer(
@@ -186,11 +186,11 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         uint _escrowIndex,
         uint _feeBasisPoints
     ) external onlyAuthorizedBrokers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][_escrowAccount][_escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
 
-        offers[_token][msg.sender].push(
+        _offers[_token][msg.sender].push(
             EscrowStructs.FXEscrowOffer({
                 escrowAccount: _escrowAccount,
                 escrowIndex: _escrowIndex,
@@ -199,7 +199,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             })
         );
 
-        emit OfferCreated(msg.sender, offers[_token][msg.sender].length - 1, _token, _escrowAccount, _escrowIndex);
+        emit OfferCreated(msg.sender, _offers[_token][msg.sender].length - 1, _token, _escrowAccount, _escrowIndex);
     }
 
     function linkOfferToEscrow(
@@ -208,8 +208,8 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         address _offerAccount,
         uint _offerIndex
     ) external onlyAuthorizedUsers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][msg.sender][_escrowIndex];
-        EscrowStructs.FXEscrowOffer storage offer = offers[_token][_offerAccount][_offerIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][msg.sender][_escrowIndex];
+        EscrowStructs.FXEscrowOffer storage offer = _offers[_token][_offerAccount][_offerIndex];
 
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(offer.createdAt > 0, "Offer is not initialized");
@@ -234,7 +234,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function freezeEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][_escrowAccount][_escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isFrozen, "Escrow is already frozen");
 
@@ -244,7 +244,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function defrostEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) public onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][_escrowAccount][_escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.isFrozen, "Escrow is not frozen");
 
@@ -254,7 +254,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function returnEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdmin {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][_escrowAccount][_escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
 
@@ -265,7 +265,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function extendEscrow(bytes32 _token, uint _escrowIndex) public onlyAuthorizedUsers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][msg.sender][_escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][msg.sender][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
 
@@ -277,7 +277,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function withdrawEscrowAfterCompletion(bytes32 _token, address escrowAccount, uint escrowIndex) external onlyAuthorizedBrokers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][escrowAccount][escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][escrowAccount][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(!escrow.isFrozen, "Escrow is frozen and cannot be withdrawn by the broker");
@@ -285,7 +285,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(escrow.selectedBrokerAccount == msg.sender, "Only the selected broker can withdraw from the escrow");
         require(block.timestamp >= escrow.expirationTimestamp, "Escrow has not yet expired");
 
-        EscrowStructs.FXEscrowOffer storage selectedOffer = offers[_token][escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
+        EscrowStructs.FXEscrowOffer storage selectedOffer = _offers[_token][escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
 
         uint platformFee = _calcBasisPointShare(escrow.amount, selectedOffer.feeBasisPoints);
         uint amountWithdrawn = escrow.amount - platformFee;
@@ -295,13 +295,13 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         // Transfer the escrow amount to the broker
         transferFundsFromContract(_token, msg.sender, amountWithdrawn);
         // Add the platform fee to the contract's balance
-        platformFeeBalances[_token] += platformFee;
+        _platformFeeBalances[_token] += platformFee;
 
         emit EscrowWithdrawnAfterCompletion(escrowAccount, escrowIndex, _token, msg.sender, amountWithdrawn);
     }
 
     function withdrawEscrowEarly(bytes32 _token, uint escrowIndex) external onlyAuthorizedUsers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][msg.sender][escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][msg.sender][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(escrow.selectedBrokerAccount == address(0), "Escrow has already selected an offer");
@@ -315,7 +315,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function withdrawEscrowAfterReturn(bytes32 _token, uint escrowIndex) external onlyAuthorizedUsers {
-        EscrowStructs.FXEscrow storage escrow = escrows[_token][msg.sender][escrowIndex];
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][msg.sender][escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(!escrow.isWithdrawn, "Escrow is already withdrawn");
         require(escrow.isReturned, "Escrow has not been returned");
@@ -331,9 +331,9 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
 
     function withdrawFees(bytes32 _token, address payable _to) external onlyAdmin {
         require(_to != address(0), "Cannot withdraw to zero address");
-        uint amount = platformFeeBalances[_token];
+        uint amount = _platformFeeBalances[_token];
         transferFundsFromContract(_token, _to, amount);
-        platformFeeBalances[_token] = 0;
+        _platformFeeBalances[_token] = 0;
     }
 
     function setConfigAddress(address _newConfigAddress) external onlyAdmin {

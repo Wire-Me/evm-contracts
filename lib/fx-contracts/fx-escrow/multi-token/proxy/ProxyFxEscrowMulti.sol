@@ -6,19 +6,19 @@ import "../configuration/EscrowConfig.sol";
 
 contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
     constructor(address _impl, address _admin, address _config) {
-        implementation = _impl;
-        admin = _admin;
+        _implementation = _impl;
+        _admin = _admin;
         config = EscrowConfig(_config);
     }
 
     function setImplementation(address _impl) external {
-        require(msg.sender == admin, "Only admin account can call this function");
-        implementation = _impl;
+        require(msg.sender == _admin, "Only admin account can call this function");
+        _implementation = _impl;
     }
 
     fallback() external payable {
-        require(implementation != address(0), "No implementation");
-        address impl = implementation;
+        require(_implementation != address(0), "No implementation");
+        address impl = _implementation;
 
         assembly {
             calldatacopy(0, 0, calldatasize())
