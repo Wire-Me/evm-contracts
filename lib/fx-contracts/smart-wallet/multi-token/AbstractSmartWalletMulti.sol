@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 
 import "../../fx-escrow/multi-token/FxEscrowMulti.sol";
 import {SmartWalletMultiStorage} from "./SmartWalletMultiStorage.sol";
+import "./configuration/WalletConfig.sol";
 
 abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
     function transferFundsFromWallet(bytes32 _token, address _to, uint _amount) internal virtual;
@@ -10,13 +11,29 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
     function escrowContract() public view virtual returns (FxEscrowMulti);
 
     modifier onlyAdminOrAuthorizedEOA() {
-        require(msg.sender == admin || msg.sender == authorizedEOA, "Sender is not an authorized admin account or authorized EOA");
+        require(msg.sender == _admin || msg.sender == _authorizedEOA, "Sender is not an authorized admin account or authorized EOA");
         _;
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Sender is not an authorized admin account");
+        require(msg.sender == _admin, "Sender is not an authorized admin account");
         _;
+    }
+
+    //////////////////////
+    // Wallet functions //
+    //////////////////////
+
+    function setImplementation(address _impl) external onlyAdmin {
+        _implementation = _impl;
+    }
+
+    function setAuthorizedEOA(address _eoa) external onlyAdminOrAuthorizedEOA {
+        _authorizedEOA = _eoa;
+    }
+
+    function setWalletConfig(address _walletConfigAddress) external onlyAdmin {
+        _config = WalletConfig(_walletConfigAddress);
     }
 
     ////////////////////
