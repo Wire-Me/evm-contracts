@@ -1,0 +1,1 @@
+Put Forge Test cases in the `test` folder.

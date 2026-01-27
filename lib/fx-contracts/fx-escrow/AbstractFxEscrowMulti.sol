@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../../EscrowStructs.sol";
+import "../../EscrowStructs.sol";
 import {FxEscrowMultiStorage} from "./FxEscrowMultiStorage.sol";
 import {EscrowConfig} from "./configuration/EscrowConfig.sol";
 

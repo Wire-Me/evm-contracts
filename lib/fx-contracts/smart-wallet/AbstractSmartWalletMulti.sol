@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import "../../fx-escrow/multi-token/FxEscrowMulti.sol";
+import "../fx-escrow/FxEscrowMulti.sol";
 import {SmartWalletMultiStorage} from "./SmartWalletMultiStorage.sol";
 import "./configuration/WalletConfig.sol";
 

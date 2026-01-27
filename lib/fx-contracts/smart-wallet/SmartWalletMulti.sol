@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
-import "../../fx-escrow/multi-token/FxEscrowMulti.sol";
+import "../fx-escrow/FxEscrowMulti.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AbstractSmartWalletMulti} from "./AbstractSmartWalletMulti.sol";
 import {WalletConfig} from "./configuration/WalletConfig.sol";
