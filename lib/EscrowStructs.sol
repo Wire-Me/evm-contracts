@@ -50,6 +50,10 @@ library EscrowStructs {
         address selectedBrokerAccount;
         /// @notice the index of the offer made by the broker account which has been selected by the user
         uint selectedOfferIndex;
+        /// @notice 'true' if the user received the fiat funds
+        bool isFundsReceived;
+        /// @notice the number of offers made by brokers for this escrow
+        uint8 offerCount;
     }
 
     struct FXEscrowOffer {
@@ -61,6 +65,20 @@ library EscrowStructs {
         uint feeBasisPoints; // The fee that will be changed when withdrawing funds from the escrow in basis points (1 basis point = 0.01%, 100 basis points = 1%, 10000 basis points = 100%)
         /// @notice The epoch timestamp (seconds) at which the offer was created
         uint createdAt;
+    }
+
+    struct BrokerDeposit {
+        /// @notice the amount of funds deposited by the broker
+        uint amount;
+        /// @notice the currency/token of the deposit
+        bytes32 token;
+         /// @notice the epoch timestamp (seconds) at which the deposit was created
+        uint createdAt;
+    }
+
+    struct RemoveOngoingBrokerOfferParam {
+        address brokerAccount;
+        uint offerIndex;
     }
 }
 

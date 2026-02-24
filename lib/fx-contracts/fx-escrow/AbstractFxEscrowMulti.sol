@@ -69,6 +69,14 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         }
     }
 
+    function transferApprovedFundsToContract(bytes32 _token, address _from, uint _amount) internal {
+        if (_token == NATIVE_TOKEN) {
+            revert("Cannot transfer native currency using this function");
+        } else {
+            IERC20(_config.erc20TokenContracts(_token)).transferFrom(_from, address(this), _amount);
+        }
+    }
+
     event TransferSuccessful(address indexed from, address indexed to, uint amount);
 
     event EscrowCreated(
@@ -168,7 +176,18 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         return _implementation;
     }
 
-    function createEscrow(bytes32 _token, uint _amount) external onlyAuthorizedUsers {
+    function createEscrow(bytes32 _token, uint _amount) external payable onlyAuthorizedUsers {
+        if (_token == NATIVE_TOKEN) {
+            require(msg.value == _amount, "Incorrect native amount sent");
+        } else {
+            require(msg.value == 0, "Do not send native token");
+            IERC20(_config.erc20TokenContracts(_token)).transferFrom(
+                msg.sender,
+                address(this),
+                _amount
+            );
+        }
+
         uint expiration = block.timestamp + defaultEscrowDuration;
 
         _escrows[_token][msg.sender].push(
@@ -181,7 +200,9 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
                 isFrozen: false,
                 isReturned: false,
                 selectedBrokerAccount: address(0),
-                selectedOfferIndex: 0
+                selectedOfferIndex: 0,
+                isFundsReceived: false,
+                offerCount: 0
             })
         );
 
@@ -197,6 +218,8 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
+        require(_ongoingBrokerOffers[msg.sender].length < MAX_ONGOING_BROKER_OFFERS, "Broker has reached the maximum number of ongoing offers");
+        require(escrow.offerCount < MAX_OFFERS_PER_ESCROW, "Escrow has reached the maximum number of offers");
 
         _offers[_token][msg.sender].push(
             EscrowStructs.FXEscrowOffer({
@@ -207,7 +230,14 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             })
         );
 
-        emit OfferCreated(msg.sender, _offers[_token][msg.sender].length - 1, _token, _escrowAccount, _escrowIndex);
+        uint newOfferIndex = _offers[_token][msg.sender].length - 1;
+
+        // Add the offer to the broker's ongoing offers
+        _addOngoingOffer(msg.sender, newOfferIndex);
+
+        escrow.offerCount++;
+
+        emit OfferCreated(msg.sender, newOfferIndex, _token, _escrowAccount, _escrowIndex);
     }
 
     function linkOfferToEscrow(
@@ -239,6 +269,24 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         escrow.selectedOfferIndex = _offerIndex;
 
         emit EscrowSelectedOffer(msg.sender, _escrowIndex, _token, _offerAccount, _offerIndex);
+    }
+
+    function markFundsAsReceived(bytes32 _token, uint _escrowIndex) external onlyAuthorizedUsers {
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][msg.sender][_escrowIndex];
+        require(escrow.createdAt > 0, "Escrow is not initialized");
+        require(escrow.selectedBrokerAccount != address(0), "No offer selected for this escrow");
+        require(!escrow.isFundsReceived, "Funds are already marked as received");
+
+        escrow.isFundsReceived = true;
+    }
+
+    function markFundsAsReceivedAdmin(bytes32 _token, address _escrowCreator, uint _escrowIndex) external onlyAdmin {
+        EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowCreator][_escrowIndex];
+        require(escrow.createdAt > 0, "Escrow is not initialized");
+        require(escrow.selectedBrokerAccount != address(0), "No offer selected for this escrow");
+        require(!escrow.isFundsReceived, "Funds are already marked as received");
+
+        escrow.isFundsReceived = true;
     }
 
     function freezeEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdmin {
@@ -292,6 +340,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(!escrow.isReturned, "Escrow is returned and cannot be withdrawn by the broker");
         require(escrow.selectedBrokerAccount == msg.sender, "Only the selected broker can withdraw from the escrow");
         require(block.timestamp >= escrow.expirationTimestamp, "Escrow has not yet expired");
+        require(escrow.isFundsReceived, "Cannot withdraw from escrow before funds are marked as received");
 
         EscrowStructs.FXEscrowOffer storage selectedOffer = _offers[_token][escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
 
@@ -342,6 +391,62 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         uint amount = _platformFeeBalances[_token];
         transferFundsFromContract(_token, _to, amount);
         _platformFeeBalances[_token] = 0;
+    }
+
+    function removeOngoingBrokerOffers(EscrowStructs.RemoveOngoingBrokerOfferParam[] calldata _offersToRemove) external onlyAdmin {
+        for (uint i = 0; i < _offersToRemove.length; i++) {
+            EscrowStructs.RemoveOngoingBrokerOfferParam calldata offerToRemove = _offersToRemove[i];
+            _removeOngoingOffer(offerToRemove.brokerAccount, offerToRemove.offerIndex);
+        }
+    }
+
+    function upsertSecurityDeposit(bytes32 _token, uint256 _amount) external onlyAuthorizedBrokers {
+        transferApprovedFundsToContract(_token, msg.sender, _amount);
+
+        _brokerDeposits[msg.sender] = EscrowStructs.BrokerDeposit({
+            amount: _amount,
+            token: _token,
+            createdAt: block.timestamp
+        });
+    }
+
+    function withdrawSecurityDeposit() external onlyAuthorizedBrokers {
+        EscrowStructs.BrokerDeposit storage deposit = _brokerDeposits[msg.sender];
+        require(deposit.amount > 0, "No security deposit to withdraw");
+
+        bytes32[3] memory tokens = [keccak256('USDC'), keccak256('USDT'), NATIVE_TOKEN];
+
+        for (uint i = 0; i < tokens.length; i++) {
+            bytes32 token = tokens[i];
+            if (_offers[token][msg.sender].length > 0) {
+                EscrowStructs.FXEscrowOffer storage lastOffer = _offers[token][msg.sender][_offers[token][msg.sender].length - 1];
+                require(block.timestamp > lastOffer.createdAt + 48 hours, "Cannot withdraw security deposit until 48 hours after the last offer was made");
+            }
+        }
+
+        // Reset the broker's deposit before transferring funds
+        delete _brokerDeposits[msg.sender];
+
+        transferFundsFromContract(deposit.token, msg.sender, deposit.amount);
+    }
+
+    function _removeOngoingOffer(address _broker, uint256 _offerId) internal {
+        uint256 index = _ongoingBrokerOffersIndex[_broker][_offerId];
+        uint256 lastIndex = _ongoingBrokerOffers[_broker].length - 1;
+
+        if (index != lastIndex) {
+            uint256 lastOfferId = _ongoingBrokerOffers[_broker][lastIndex];
+            _ongoingBrokerOffers[_broker][index] = lastOfferId;
+            _ongoingBrokerOffersIndex[_broker][lastOfferId] = index;
+        }
+
+        _ongoingBrokerOffers[_broker].pop();
+        delete _ongoingBrokerOffersIndex[_broker][_offerId];
+    }
+
+    function _addOngoingOffer(address _broker, uint256 _offerId) internal {
+        _ongoingBrokerOffersIndex[_broker][_offerId] = _ongoingBrokerOffers[_broker].length;
+        _ongoingBrokerOffers[_broker].push(_offerId);
     }
 
     function setConfigAddress(address _newConfigAddress) external onlyAdmin {

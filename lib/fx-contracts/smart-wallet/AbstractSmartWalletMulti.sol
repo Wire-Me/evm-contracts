@@ -1,12 +1,24 @@
 // SPDX-License-Identifier: GNU-3.0
 pragma solidity ^0.8.30;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../fx-escrow/FxEscrowMulti.sol";
 import {SmartWalletMultiStorage} from "./SmartWalletMultiStorage.sol";
 import "./configuration/WalletConfig.sol";
 
 abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
+    bytes32 internal constant NATIVE_TOKEN = keccak256("NATIVE");
+
     function transferFundsFromWallet(bytes32 _token, address _to, uint _amount) internal virtual;
+
+    function approveERC20Transfer(bytes32 _token, address _to, uint _amount) internal {
+        if (_token == NATIVE_TOKEN) {
+            revert("Cannot approve transfer of native currency");
+        } else {
+            IERC20 erc20TokenContract = IERC20(_config.erc20TokenContracts(_token));
+            erc20TokenContract.approve(_to, _amount);
+        }
+    }
 
     function escrowContract() public view virtual returns (FxEscrowMulti);
 
@@ -56,11 +68,27 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
     // User functions //
     ////////////////////
 
-    function transferFundsAndCreateEscrow(bytes32 _token, uint _amount) external onlyAdminOrAuthorizedEOA {
+    function transferFundsAndCreateEscrow(bytes32 _token, uint _amount)
+    external
+    onlyAdminOrAuthorizedEOA
+    {
         FxEscrowMulti fx = escrowContract();
-        transferFundsFromWallet(_token, address(fx), _amount);
+        // transfer funds with transaction if using native currency
+        if (_token == NATIVE_TOKEN) {
+            (bool success, ) = address(fx).call{value: _amount}(
+                abi.encodeWithSelector(
+                    fx.createEscrow.selector,
+                    _token,
+                    _amount
+                )
+            );
 
-        fx.createEscrow(_token, _amount);
+            require(success, "Native escrow creation failed");
+        } else {
+            // If using ERC20 token use approve / transferFrom
+            IERC20(_config.erc20TokenContracts(_token)).approve(address(fx), _amount);
+            fx.createEscrow(_token, _amount);
+        }
     }
 
     function linkOfferToEscrow(bytes32 _token, uint _escrowIndex, address _offerAccount, uint _offerIndex) external onlyAdminOrAuthorizedEOA {
@@ -95,6 +123,17 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
 
     function withdrawEscrowAfterCompletion(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
         escrowContract().withdrawEscrowAfterCompletion(_token,_escrowAccount, _escrowIndex);
+    }
+
+    function depositSecurityDeposit(bytes32 _token, uint _amount) external onlyAdminOrAuthorizedEOA {
+        FxEscrowMulti fx = escrowContract();
+        approveERC20Transfer(_token, address(fx), _amount);
+
+        fx.upsertSecurityDeposit(_token, _amount);
+    }
+
+    function withdrawSecurityDeposit(bytes32 _token, uint _amount) external onlyAdminOrAuthorizedEOA {
+        escrowContract().withdrawSecurityDeposit();
     }
 
     /////////////////////////

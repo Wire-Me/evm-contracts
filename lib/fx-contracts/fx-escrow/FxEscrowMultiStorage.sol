@@ -21,5 +21,13 @@ abstract contract FxEscrowMultiStorage {
 
     EscrowConfig internal _config;
 
-    uint256[50] private __gap;
+    mapping(address => EscrowStructs.BrokerDeposit) internal _brokerDeposits;
+
+    mapping(address => uint256[]) internal _ongoingBrokerOffers;
+    mapping(address => mapping(uint256 => uint256)) internal _ongoingBrokerOffersIndex;
+
+    uint8 public MAX_ONGOING_BROKER_OFFERS = 3;
+    uint8 public MAX_OFFERS_PER_ESCROW = 5;
+
+    uint256[46] private __gap;
 }
