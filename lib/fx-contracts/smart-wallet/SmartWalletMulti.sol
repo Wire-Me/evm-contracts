@@ -7,8 +7,6 @@ import {AbstractSmartWalletMulti} from "./AbstractSmartWalletMulti.sol";
 import {WalletConfig} from "./configuration/WalletConfig.sol";
 
 contract SmartWalletMulti is AbstractSmartWalletMulti {
-    bytes32 internal constant NATIVE_TOKEN = keccak256("NATIVE");
-
     event TransferSuccessful(address indexed from, address indexed to, uint amount);
 
     constructor() {}
