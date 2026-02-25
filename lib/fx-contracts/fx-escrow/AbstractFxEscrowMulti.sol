@@ -188,14 +188,12 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             );
         }
 
-        uint expiration = block.timestamp + defaultEscrowDuration;
-
         _escrows[_token][msg.sender].push(
             EscrowStructs.FXEscrow({
                 amount: _amount,
                 token: _token,
                 createdAt: block.timestamp,
-                expirationTimestamp: expiration,
+                expirationTimestamp: 0,
                 isWithdrawn: false,
                 isFrozen: false,
                 isReturned: false,
@@ -206,7 +204,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             })
         );
 
-        emit EscrowCreated(msg.sender, _escrows[_token][msg.sender].length - 1, _token, expiration, _amount);
+        emit EscrowCreated(msg.sender, _escrows[_token][msg.sender].length - 1, _token, 0, _amount);
     }
 
     function createOffer(
@@ -258,9 +256,11 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
         }
 
-        // Extend the escrow expiration if it is past half of its duration
-        if (block.timestamp > (escrow.expirationTimestamp - (defaultEscrowDuration / 2))) {
-            uint newExpirationTimestamp = block.timestamp + defaultEscrowDuration;
+        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[_offerAccount];
+        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
+        // set expiration to 48 hours from now
+        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
+            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
             escrow.expirationTimestamp = newExpirationTimestamp;
             emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
         }
