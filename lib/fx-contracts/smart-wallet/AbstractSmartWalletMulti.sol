@@ -132,7 +132,7 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         fx.upsertSecurityDeposit(_token, _amount);
     }
 
-    function withdrawSecurityDeposit(bytes32 _token, uint _amount) external onlyAdminOrAuthorizedEOA {
+    function withdrawSecurityDeposit() external onlyAdminOrAuthorizedEOA {
         escrowContract().withdrawSecurityDeposit();
     }
 
