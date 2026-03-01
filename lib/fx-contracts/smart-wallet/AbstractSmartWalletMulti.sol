@@ -48,6 +48,11 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         _config = WalletConfig(_walletConfigAddress);
     }
 
+    function setWalletConfigAndImplementation(address _walletConfigAddress, address _impl) external onlyAdmin {
+        _config = WalletConfig(_walletConfigAddress);
+        _implementation = _impl;
+    }
+
     function getErc20ContractAddress(bytes32 _token) external view returns (address) {
         return _config.erc20TokenContracts(_token);
     }

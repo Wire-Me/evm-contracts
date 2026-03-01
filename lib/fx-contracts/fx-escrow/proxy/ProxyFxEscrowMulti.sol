@@ -11,11 +11,6 @@ contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
         _config = EscrowConfig(_escrowConfigAddress);
     }
 
-    function setImplementation(address _impl) external {
-        require(msg.sender == _admin, "Only admin account can call this function");
-        _implementation = _impl;
-    }
-
     fallback() external payable {
         require(_implementation != address(0), "No implementation");
         address impl = _implementation;
