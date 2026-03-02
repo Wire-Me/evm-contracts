@@ -9,7 +9,7 @@ abstract contract FxEscrowMultiStorage {
     address internal _admin;
 
     mapping(bytes32 => uint) internal _platformFeeBalances;
-    uint immutable public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
+    uint constant public defaultEscrowDuration = 1 hours; // Default expiration time for escrows
 
     mapping(address => bool) internal _authorizedUserWallets;
     mapping(address => bool) internal _authorizedBrokerWallets;
