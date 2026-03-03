@@ -164,11 +164,5 @@ contract SmartWalletEscrowTest is Test {
         assertTrue(offerData.createdAt > 0);
         assertEq(offerData.escrowAccount, address(userWallet));
         assertEq(offerData.escrowIndex, 0);
-//        assertTrue(offerData.createdAt > 0);
-//        assertFalse(offerData.isWithdrawn);
-
-        // Ensure funds moved to escrow contract
-//        assertEq(usdc.balanceOf(address(escrow)), amount);
-//        assertEq(usdc.balanceOf(address(userWallet)), 900 * 10 ** 6);
     }
 }
