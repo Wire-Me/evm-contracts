@@ -5,10 +5,12 @@ import "../FxEscrowMultiStorage.sol";
 import "../configuration/EscrowConfig.sol";
 
 contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
-    constructor(address _implementationAddress, address _adminAddress, address _escrowConfigAddress) {
+    constructor(address _implementationAddress, address _adminAddress, address _escrowConfigAddress, uint256 _brokerDepositAmount, uint256 _expirationDurationForNonBrokers) {
         _implementation = _implementationAddress;
         _admin = _adminAddress;
         _config = EscrowConfig(_escrowConfigAddress);
+        MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20 = _brokerDepositAmount;
+        EXPIRATION_DURATION_FOR_NON_BROKERS = _expirationDurationForNonBrokers;
     }
 
     fallback() external payable {
