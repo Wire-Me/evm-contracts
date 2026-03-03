@@ -434,6 +434,10 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         transferFundsFromContract(deposit.token, msg.sender, deposit.amount);
     }
 
+    function getOngoingBrokerOffers(address broker) external view returns (uint256[] memory){
+        return _ongoingBrokerOffers[broker];
+    }
+
     function _removeOngoingOffer(address _broker, uint256 _offerId) internal {
         uint256 index = _ongoingBrokerOffersIndex[_broker][_offerId];
         uint256 lastIndex = _ongoingBrokerOffers[_broker].length - 1;
