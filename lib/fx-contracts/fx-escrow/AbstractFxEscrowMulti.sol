@@ -293,6 +293,12 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(escrow.selectedBrokerAccount != address(0), "No offer selected for this escrow");
         require(!escrow.isFundsReceived, "Funds are already marked as received");
 
+        // Defrost the escrow if it is frozen
+        if (escrow.isFrozen) {
+            escrow.isFrozen = false;
+            emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
+        }
+
         escrow.isFundsReceived = true;
         emit FundsReceived(msg.sender, _escrowIndex, _token);
     }
@@ -302,6 +308,12 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount != address(0), "No offer selected for this escrow");
         require(!escrow.isFundsReceived, "Funds are already marked as received");
+
+        // Defrost the escrow if it is frozen
+        if (escrow.isFrozen) {
+            escrow.isFrozen = false;
+            emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
+        }
 
         escrow.isFundsReceived = true;
 
