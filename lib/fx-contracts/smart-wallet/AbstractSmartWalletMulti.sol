@@ -112,6 +112,10 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         escrowContract().withdrawEscrowAfterReturn(_token,_escrowIndex);
     }
 
+    function markFundsAsReceived(bytes32 _token, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
+        escrowContract().markFundsAsReceived(_token, _escrowIndex);
+    }
+
     //////////////////////
     // Broker functions //
     //////////////////////
