@@ -405,9 +405,10 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function clearOngoingOffersForBroker(address _broker) external onlyAdmin {
-        uint256[] storage ongoingOffers = _ongoingBrokerOffers[_broker];
-        for (uint256 i = 0; i < ongoingOffers.length; i++) {
-            _removeOngoingOffer(_broker, ongoingOffers[i]);
+        // Remove all ongoing offers for the broker starting with the last one to avoid issues with shifting indices when removing offers
+        while (_ongoingBrokerOffers[_broker].length > 0) {
+            uint256 offerId = _ongoingBrokerOffers[_broker][_ongoingBrokerOffers[_broker].length - 1];
+            _removeOngoingOffer(_broker, offerId);
         }
     }
 
