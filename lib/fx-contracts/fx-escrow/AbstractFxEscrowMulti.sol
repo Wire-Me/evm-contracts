@@ -103,6 +103,18 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         uint _offerIndex
     );
 
+    event FundsReceived(
+        address indexed _creatorOfEscrow,
+        uint indexed _escrowIndex,
+        bytes32 indexed _currency
+    );
+
+    event FundsReceivedAdmin(
+        address indexed _creatorOfEscrow,
+        uint indexed _escrowIndex,
+        bytes32 indexed _currency
+    );
+
     event EscrowFrozen(
         address indexed _creatorOfEscrow,
         uint indexed _escrowIndex,
@@ -282,6 +294,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(!escrow.isFundsReceived, "Funds are already marked as received");
 
         escrow.isFundsReceived = true;
+        emit FundsReceived(msg.sender, _escrowIndex, _token);
     }
 
     function markFundsAsReceivedAdmin(bytes32 _token, address _escrowCreator, uint _escrowIndex) external onlyAdmin {
@@ -291,6 +304,8 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(!escrow.isFundsReceived, "Funds are already marked as received");
 
         escrow.isFundsReceived = true;
+
+        emit FundsReceivedAdmin(_escrowCreator, _escrowIndex, _token);
     }
 
     function freezeEscrow(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdmin {
