@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../fx-escrow/FxEscrowMulti.sol";
+import "../../EscrowStructs.sol";
 import {SmartWalletMultiStorage} from "./SmartWalletMultiStorage.sol";
 import "./configuration/WalletConfig.sol";
 
