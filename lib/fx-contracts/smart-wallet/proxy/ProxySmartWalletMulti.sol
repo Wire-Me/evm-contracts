@@ -11,6 +11,11 @@ contract ProxySmartWalletMulti is SmartWalletMultiStorage {
         _config = WalletConfig(_walletConfigAddress);
     }
 
+    function setImplementation(address _impl) external {
+        require(msg.sender == _admin, "Sender is not an authorized admin account");
+        _implementation = _impl;
+    }
+
     fallback() external payable {
         require(_implementation != address(0), "No implementation");
         address impl = _implementation;
