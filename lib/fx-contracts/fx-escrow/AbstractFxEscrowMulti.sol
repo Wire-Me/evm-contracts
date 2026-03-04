@@ -470,8 +470,6 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function canWithdrawSecurityDeposit(address broker) external view returns (bool) {
-        EscrowStructs.BrokerDeposit storage deposit = _brokerDeposits[broker];
-
         bytes32[3] memory tokens = [keccak256('USDC'), keccak256('USDT'), NATIVE_TOKEN];
 
         for (uint i = 0; i < tokens.length; i++) {
