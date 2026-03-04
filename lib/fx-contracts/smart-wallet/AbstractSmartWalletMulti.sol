@@ -145,6 +145,14 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         escrowContract().withdrawSecurityDeposit();
     }
 
+    function canWithdrawSecurityDeposit() external view returns (bool) {
+        return escrowContract().canWithdrawSecurityDeposit(address(this));
+    }
+
+    function getBrokerDepositInfo() external view returns (EscrowStructs.BrokerDeposit memory) {
+        return escrowContract().getBrokerDeposit(address(this));
+    }
+
     /////////////////////////
     // Universal functions //
     /////////////////////////

@@ -469,6 +469,28 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         transferFundsFromContract(deposit.token, msg.sender, deposit.amount);
     }
 
+    function canWithdrawSecurityDeposit(address broker) external view returns (bool) {
+        EscrowStructs.BrokerDeposit storage deposit = _brokerDeposits[broker];
+
+        bytes32[3] memory tokens = [keccak256('USDC'), keccak256('USDT'), NATIVE_TOKEN];
+
+        for (uint i = 0; i < tokens.length; i++) {
+            bytes32 token = tokens[i];
+            if (_offers[token][broker].length > 0) {
+                EscrowStructs.FXEscrowOffer storage lastOffer = _offers[token][broker][_offers[token][broker].length - 1];
+                if (block.timestamp <= lastOffer.createdAt + 48 hours) {
+                    return false; // Cannot withdraw until 48 hours after the last offer was made
+                }
+            }
+        }
+
+        return true; // All checks passed, can withdraw
+    }
+
+    function getBrokerDeposit(address broker) external view returns (EscrowStructs.BrokerDeposit memory) {
+        return _brokerDeposits[broker];
+    }
+
     function getOngoingBrokerOffers(address broker) external view returns (uint256[] memory){
         return _ongoingBrokerOffers[broker];
     }
