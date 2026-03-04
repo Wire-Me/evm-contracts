@@ -184,14 +184,6 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         return _admin;
     }
 
-    function getImplementation() external view returns (address) {
-        return _implementation;
-    }
-
-    function setImplementation(address _impl) external onlyAdmin {
-        _implementation = _impl;
-    }
-
     function createEscrow(bytes32 _token, uint _amount) external payable onlyAuthorizedUsers {
         if (_token == NATIVE_TOKEN) {
             require(msg.value == _amount, "Incorrect native amount sent");

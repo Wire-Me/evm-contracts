@@ -13,6 +13,15 @@ contract ProxyFxEscrowMulti is FxEscrowMultiStorage {
         EXPIRATION_DURATION_FOR_NON_BROKERS = _expirationDurationForNonBrokers;
     }
 
+    function getImplementation() external view returns (address) {
+        return _implementation;
+    }
+
+    function setImplementation(address _impl) external {
+        require(msg.sender == _admin, "Sender is not an authorized admin account");
+        _implementation = _impl;
+    }
+
     fallback() external payable {
         require(_implementation != address(0), "No implementation");
         address impl = _implementation;
