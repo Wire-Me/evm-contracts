@@ -444,16 +444,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     function withdrawSecurityDeposit() external onlyAuthorizedBrokers {
         EscrowStructs.BrokerDeposit storage deposit = _brokerDeposits[msg.sender];
         require(deposit.amount > 0, "No security deposit to withdraw");
-
-        bytes32[3] memory tokens = [keccak256('USDC'), keccak256('USDT'), NATIVE_TOKEN];
-
-        for (uint i = 0; i < tokens.length; i++) {
-            bytes32 token = tokens[i];
-            if (_offers[token][msg.sender].length > 0) {
-                EscrowStructs.FXEscrowOffer storage lastOffer = _offers[token][msg.sender][_offers[token][msg.sender].length - 1];
-                require(block.timestamp > lastOffer.createdAt + 48 hours, "Cannot withdraw security deposit until 48 hours after the last offer was made");
-            }
-        }
+        require(canWithdrawSecurityDeposit(msg.sender), "Cannot withdraw security deposit yet");
 
         // Reset the broker's deposit before transferring funds
         delete _brokerDeposits[msg.sender];
