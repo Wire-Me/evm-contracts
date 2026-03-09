@@ -446,10 +446,14 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         require(deposit.amount > 0, "No security deposit to withdraw");
         require(canWithdrawSecurityDeposit(msg.sender), "Cannot withdraw security deposit yet");
 
+        // Cache values in memory before deleting storage
+        uint amount = deposit.amount;
+        bytes32 token = deposit.token;
+
         // Reset the broker's deposit before transferring funds
         delete _brokerDeposits[msg.sender];
 
-        transferFundsFromContract(deposit.token, msg.sender, deposit.amount);
+        transferFundsFromContract(token, msg.sender, amount);
     }
 
     function canWithdrawSecurityDeposit(address broker) public view returns (bool) {

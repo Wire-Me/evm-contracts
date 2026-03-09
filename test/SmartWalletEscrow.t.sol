@@ -24,6 +24,8 @@ contract MockUSDC is ERC20 {
 
 contract SmartWalletEscrowTest is Test {
 
+    uint brokerInitialBalance = 1000 * 10 ** 6;
+    uint userInitialBalance = 1000 * 10 ** 6;
     bytes32 internal constant USDC = keccak256("USDC");
 
     address internal admin = address(1);
@@ -59,15 +61,14 @@ contract SmartWalletEscrowTest is Test {
             address(usdc)
         );
 
-        escrowImpl = new FxEscrowMulti(
-            500 * 10 ** 6,
-            48 hours
-        );
+        escrowImpl = new FxEscrowMulti();
 
         escrowProxy = new ProxyFxEscrowMulti(
             address(escrowImpl),
             admin,
-            address(escrowConfig)
+            address(escrowConfig),
+            500 * 10 ** 6,
+            48 hours
         );
 
         escrow = FxEscrowMulti(payable(address(escrowProxy)));
@@ -114,7 +115,8 @@ contract SmartWalletEscrowTest is Test {
         vm.stopPrank();
 
         // Mint USDC to wallet
-        usdc.mint(address(userWallet), 1_000 * 10 ** 6);
+        usdc.mint(address(userWallet), userInitialBalance);
+        usdc.mint(address(brokerWallet), brokerInitialBalance);
     }
 
     function test_CreateEscrow_WithERC20() public {
@@ -164,5 +166,67 @@ contract SmartWalletEscrowTest is Test {
         assertTrue(offerData.createdAt > 0);
         assertEq(offerData.escrowAccount, address(userWallet));
         assertEq(offerData.escrowIndex, 0);
+    }
+
+    function test_DepositSecurityDeposit() public {
+
+        vm.startPrank(admin);
+
+        // -----------------
+        // Deposit the security deposit
+        // -----------------
+
+        uint amount = 500 * 10 ** 6;
+        brokerWallet.depositSecurityDeposit(USDC, amount);
+
+        vm.stopPrank();
+
+        // Verify deposit exists
+        EscrowStructs.BrokerDeposit memory brokerDeposit = escrow.getBrokerDeposit(address(brokerWallet));
+
+        assertEq(brokerDeposit.amount, amount);
+        assertTrue(brokerDeposit.createdAt > 0);
+
+        // Verify funds moved to escrow contract
+        assertEq(usdc.balanceOf(address(escrow)), amount);
+        assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance - amount);
+    }
+
+    function test_WithdrawSecurityDeposit() public {
+
+        vm.startPrank(admin);
+
+        // -----------------
+        // Deposit the security deposit
+        // -----------------
+
+        uint amount = 500 * 10 ** 6;
+        brokerWallet.depositSecurityDeposit(USDC, amount);
+
+        vm.stopPrank();
+
+        // Verify deposit exists
+        EscrowStructs.BrokerDeposit memory brokerDeposit = escrow.getBrokerDeposit(address(brokerWallet));
+
+        assertEq(brokerDeposit.amount, amount);
+        assertTrue(brokerDeposit.createdAt > 0);
+
+        // Verify funds moved to escrow contract
+        assertEq(usdc.balanceOf(address(escrow)), amount);
+        assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance - amount);
+
+        // -----------------
+        // Withdraw the security deposit
+        // -----------------
+
+        vm.startPrank(admin);
+
+        brokerWallet.withdrawSecurityDeposit();
+
+        // Verify funds moved from escrow contract
+        assertEq(usdc.balanceOf(address(escrow)), 0);
+        assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance);
+
+        vm.stopPrank();
     }
 }
