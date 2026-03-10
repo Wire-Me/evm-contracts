@@ -264,15 +264,6 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
         }
 
-        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[_offerAccount];
-        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
-        // set expiration to 48 hours from now
-        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
-            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
-            escrow.expirationTimestamp = newExpirationTimestamp;
-            emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
-        }
-
         escrow.selectedBrokerAccount = _offerAccount;
         escrow.selectedOfferIndex = _offerIndex;
 
@@ -291,6 +282,15 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
         }
 
+        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
+        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
+        // set expiration to 48 hours from now
+        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
+            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+            escrow.expirationTimestamp = newExpirationTimestamp;
+            emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
+        }
+
         escrow.isFundsReceived = true;
         emit FundsReceived(msg.sender, _escrowIndex, _token);
     }
@@ -305,6 +305,15 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         if (escrow.isFrozen) {
             escrow.isFrozen = false;
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
+        }
+
+        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
+        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
+        // set expiration to 48 hours from now
+        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
+            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+            escrow.expirationTimestamp = newExpirationTimestamp;
+            emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
         }
 
         escrow.isFundsReceived = true;
