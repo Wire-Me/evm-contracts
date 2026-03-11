@@ -33,5 +33,7 @@ abstract contract FxEscrowMultiStorage {
 
     uint256 public EXPIRATION_DURATION_FOR_NON_BROKERS = 48 hours;
 
-    uint256[44] private __gap;
+    mapping(address => bool) internal _frozenBrokerDeposits;
+
+    uint256[43] private __gap;
 }

@@ -465,7 +465,28 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         transferFundsFromContract(token, msg.sender, amount);
     }
 
+    function confiscateBrokerSecurityDeposit(address broker) external onlyAdmin {
+        EscrowStructs.BrokerDeposit storage deposit = _brokerDeposits[broker];
+        require(deposit.amount > 0, "No security deposit to confiscate");
+
+        // Cache values in memory before deleting storage
+        uint amount = deposit.amount;
+        bytes32 token = deposit.token;
+
+        // Reset the broker's deposit before transferring funds
+        delete _brokerDeposits[broker];
+
+        // Add the confiscated amount to the platform fee balance
+        _platformFeeBalances[token] += amount;
+    }
+
+    function freezeBrokerSecurityDeposit(address broker) external onlyAdmin {
+        require(_brokerDeposits[broker].amount > 0, "Broker does not have a security deposit to freeze");
+        _frozenBrokerDeposits[broker] = true;
+    }
+
     function canWithdrawSecurityDeposit(address broker) public view returns (bool) {
+        require(_frozenBrokerDeposits[broker] == false, "Broker's security deposit is currently frozen");
         bytes32[3] memory tokens = [keccak256('USDC'), keccak256('USDT'), NATIVE_TOKEN];
 
         for (uint i = 0; i < tokens.length; i++) {
@@ -483,6 +504,10 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
 
     function getBrokerDeposit(address broker) external view returns (EscrowStructs.BrokerDeposit memory) {
         return _brokerDeposits[broker];
+    }
+
+    function isBrokerSecurityDepositFrozen(address broker) external view returns (bool) {
+        return _frozenBrokerDeposits[broker];
     }
 
     function getOngoingBrokerOffers(address broker) external view returns (uint256[] memory){
