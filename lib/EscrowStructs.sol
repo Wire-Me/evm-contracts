@@ -80,5 +80,10 @@ library EscrowStructs {
         address brokerAccount;
         uint offerIndex;
     }
+
+    struct BrokerOngoingOffer {
+        uint offerIndex;
+        bytes32 token;
+     }
 }
 

@@ -23,7 +23,11 @@ abstract contract FxEscrowMultiStorage {
 
     mapping(address => EscrowStructs.BrokerDeposit) internal _brokerDeposits;
 
+    /// @notice maps the address of the broker to an array of offer indexes
+    /// These indexes correspond to the offers in _offers that the broker has made for escrows that are still ongoing
     mapping(address => uint256[]) internal _ongoingBrokerOffers;
+    /// @notice maps the address of the broker to a mapping which maps the offer index (value in _ongoingBrokerOffers) to the index of it in the _ongoingBrokerOffers array
+    /// This allows for efficient removal of offers from the _ongoingBrokerOffers array when an offer is no longer ongoing
     mapping(address => mapping(uint256 => uint256)) internal _ongoingBrokerOffersIndex;
 
     uint8 public MAX_ONGOING_BROKER_OFFERS = 3;
@@ -35,5 +39,8 @@ abstract contract FxEscrowMultiStorage {
 
     mapping(address => bool) internal _frozenBrokerDeposits;
 
-    uint256[43] private __gap;
+    /// @notice maps the address of the broker to a mapping which maps the offer to the hash of the token the offer is on
+    mapping(address => mapping(uint256 => bytes32)) internal _ongoingBrokerOffersToken;
+
+    uint256[42] private __gap;
 }
