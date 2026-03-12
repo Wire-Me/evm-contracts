@@ -428,15 +428,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     function removeOngoingBrokerOffers(EscrowStructs.RemoveOngoingBrokerOfferParam[] calldata _offersToRemove) external onlyAdmin {
         for (uint i = 0; i < _offersToRemove.length; i++) {
             EscrowStructs.RemoveOngoingBrokerOfferParam calldata offerToRemove = _offersToRemove[i];
-            _removeOngoingOffer(offerToRemove.brokerAccount, offerToRemove.offerIndex);
-        }
-    }
-
-    function clearOngoingOffersForBroker(address _broker) external onlyAdmin {
-        // Remove all ongoing offers for the broker starting with the last one to avoid issues with shifting indices when removing offers
-        while (_ongoingBrokerOffers[_broker].length > 0) {
-            uint256 offerId = _ongoingBrokerOffers[_broker][_ongoingBrokerOffers[_broker].length - 1];
-            _removeOngoingOffer(_broker, offerId);
+            _removeOngoingOffer(offerToRemove.brokerAccount, offerToRemove.offerIndex, offerToRemove.token);
         }
     }
 
@@ -511,38 +503,35 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
     }
 
     function getOngoingBrokerOffers(address broker) external view returns (EscrowStructs.BrokerOngoingOffer[] memory) {
-        uint256[] memory offerIds = _ongoingBrokerOffers[broker];
-        EscrowStructs.BrokerOngoingOffer[] memory offers = new EscrowStructs.BrokerOngoingOffer[](offerIds.length);
-
-        for (uint256 i = 0; i < offerIds.length; i++) {
-            offers[i] = EscrowStructs.BrokerOngoingOffer({
-                offerIndex: offerIds[i],
-                token: _ongoingBrokerOffersToken[broker][offerIds[i]]
-            });
-        }
-
-        return offers;
+        return _ongoingBrokerOffers[broker];
     }
 
-    function _removeOngoingOffer(address _broker, uint256 _offerId) internal {
-        uint256 index = _ongoingBrokerOffersIndex[_broker][_offerId];
+    function _getBrokerOfferKey(uint256 _offerIndex, bytes32 _token) internal pure returns (bytes32) {
+        return keccak256(abi.encode(_offerIndex, _token));
+    }
+
+    function _removeOngoingOffer(address _broker, uint256 _offerId, bytes32 _token) internal {
+        bytes32 key = _getBrokerOfferKey(_offerId, _token);
+        uint256 index = _ongoingBrokerOffersIndex[_broker][key];
         uint256 lastIndex = _ongoingBrokerOffers[_broker].length - 1;
 
         if (index != lastIndex) {
-            uint256 lastOfferId = _ongoingBrokerOffers[_broker][lastIndex];
-            _ongoingBrokerOffers[_broker][index] = lastOfferId;
-            _ongoingBrokerOffersIndex[_broker][lastOfferId] = index;
+            EscrowStructs.BrokerOngoingOffer memory last = _ongoingBrokerOffers[_broker][lastIndex];
+            _ongoingBrokerOffers[_broker][index] = last;
+            _ongoingBrokerOffersIndex[_broker][_getBrokerOfferKey(last.offerIndex, last.token)] = index;
         }
 
         _ongoingBrokerOffers[_broker].pop();
-        delete _ongoingBrokerOffersIndex[_broker][_offerId];
-        delete _ongoingBrokerOffersToken[_broker][_offerId];
+        delete _ongoingBrokerOffersIndex[_broker][key];
     }
 
-    function _addOngoingOffer(address _broker, uint256 _offerId, bytes32 _token) internal {
-        _ongoingBrokerOffersIndex[_broker][_offerId] = _ongoingBrokerOffers[_broker].length;
-        _ongoingBrokerOffersToken[_broker][_offerId] = _token;
-        _ongoingBrokerOffers[_broker].push(_offerId);
+    function _addOngoingOffer(address _broker, uint256 _offerIndex, bytes32 _token) internal {
+        bytes32 key = _getBrokerOfferKey(_offerIndex, _token);
+        _ongoingBrokerOffersIndex[_broker][key] = _ongoingBrokerOffers[_broker].length;
+        _ongoingBrokerOffers[_broker].push(EscrowStructs.BrokerOngoingOffer({
+            offerIndex: _offerIndex,
+            token: _token
+        }));
     }
 
     function setConfigAddress(address _newConfigAddress) external onlyAdmin {

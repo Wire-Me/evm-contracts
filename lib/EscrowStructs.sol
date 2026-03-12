@@ -79,6 +79,7 @@ library EscrowStructs {
     struct RemoveOngoingBrokerOfferParam {
         address brokerAccount;
         uint offerIndex;
+        bytes32 token;
     }
 
     struct BrokerOngoingOffer {
