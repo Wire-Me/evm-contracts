@@ -168,6 +168,59 @@ contract SmartWalletEscrowTest is Test {
         assertEq(offerData.escrowIndex, 0);
     }
 
+    function test_CreateOfferWithExpiration_UsesCustomDuration() public {
+        vm.startPrank(admin);
+
+        uint amount = 100 * 10 ** 6;
+        userWallet.transferFundsAndCreateEscrow(USDC, amount);
+
+        uint256 customDuration = 3 hours;
+        brokerWallet.createOfferWithExpiration(USDC, address(userWallet), 0, 0, customDuration);
+
+        userWallet.linkOfferToEscrow(USDC, 0, address(brokerWallet), 0);
+
+        uint256 expectedTimestamp = block.timestamp + customDuration;
+        userWallet.markFundsAsReceived(USDC, 0);
+
+        vm.stopPrank();
+
+        EscrowStructs.FXEscrow memory escrowData = escrow.getEscrow(USDC, address(userWallet), 0);
+        assertEq(escrowData.expirationTimestamp, expectedTimestamp);
+    }
+
+    function test_CreateOfferWithExpiration_RevertsAboveMaxDuration() public {
+        vm.startPrank(admin);
+
+        uint amount = 100 * 10 ** 6;
+        userWallet.transferFundsAndCreateEscrow(USDC, amount);
+
+        uint256 tooLong = escrow.MAX_OFFER_EXPIRATION_DURATION() + 1;
+
+        vm.expectRevert("Expiration duration exceeds maximum allowed");
+        brokerWallet.createOfferWithExpiration(USDC, address(userWallet), 0, 0, tooLong);
+
+        vm.stopPrank();
+    }
+
+    function test_CreateOffer_WithoutExpiration_FallsBackToBrokerDepositLogic() public {
+        vm.startPrank(admin);
+
+        uint amount = 100 * 10 ** 6;
+        userWallet.transferFundsAndCreateEscrow(USDC, amount);
+
+        // Broker has no security deposit, so the non-broker fallback duration applies
+        brokerWallet.createOffer(USDC, address(userWallet), 0, 0);
+        userWallet.linkOfferToEscrow(USDC, 0, address(brokerWallet), 0);
+
+        uint256 expectedTimestamp = block.timestamp + escrow.EXPIRATION_DURATION_FOR_NON_BROKERS();
+        userWallet.markFundsAsReceived(USDC, 0);
+
+        vm.stopPrank();
+
+        EscrowStructs.FXEscrow memory escrowData = escrow.getEscrow(USDC, address(userWallet), 0);
+        assertEq(escrowData.expirationTimestamp, expectedTimestamp);
+    }
+
     function test_DepositSecurityDeposit() public {
 
         vm.startPrank(admin);

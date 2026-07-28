@@ -86,5 +86,12 @@ library EscrowStructs {
         uint offerIndex;
         bytes32 token;
      }
+
+    struct OfferExpirationConfig {
+        /// @notice 'true' if this offer was created with an explicit expiration duration
+        bool isSet;
+        /// @notice the expiration delay (seconds) to apply once this offer's escrow marks funds received
+        uint256 duration;
+    }
 }
 

@@ -52,5 +52,10 @@ abstract contract FxEscrowMultiStorage {
     /// This allows for efficient removal of offers from the _ongoingBrokerOffers array when an offer is no longer ongoing
     mapping(address => mapping(bytes32 => uint256)) internal _ongoingBrokerOffersIndex;
 
-    uint256[40] private __gap;
+    /// @notice maps token => broker address => offer index to the expiration config for that offer
+    /// If 'isSet' is false, the offer was created without an explicit expiration duration and the
+    /// broker-deposit-based fallback (EXPIRATION_DURATION_FOR_NON_BROKERS) applies instead
+    mapping(bytes32 => mapping(address => mapping(uint256 => EscrowStructs.OfferExpirationConfig))) internal _offerExpirationConfigs;
+
+    uint256[39] private __gap;
 }

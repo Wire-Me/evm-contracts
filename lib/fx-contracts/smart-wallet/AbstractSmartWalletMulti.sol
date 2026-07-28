@@ -131,6 +131,17 @@ abstract contract AbstractSmartWalletMulti is SmartWalletMultiStorage {
         escrowContract().createOffer(_token,_escrowAccount, _escrowIndex, _feeBasisPoints);
     }
 
+    function createOfferWithExpiration(
+        bytes32 _token,
+        address _escrowAccount,
+        uint _escrowIndex,
+        uint _feeBasisPoints,
+        uint256 _expirationDuration
+    ) external onlyAdmin {
+        require(_escrowAccount != address(0), "Escrow account cannot be zero address");
+        escrowContract().createOfferWithExpiration(_token, _escrowAccount, _escrowIndex, _feeBasisPoints, _expirationDuration);
+    }
+
     function withdrawEscrowAfterCompletion(bytes32 _token, address _escrowAccount, uint _escrowIndex) external onlyAdminOrAuthorizedEOA {
         escrowContract().withdrawEscrowAfterCompletion(_token,_escrowAccount, _escrowIndex);
     }

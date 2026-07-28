@@ -215,12 +215,14 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         emit EscrowCreated(msg.sender, _escrows[_token][msg.sender].length - 1, _token, 0, _amount);
     }
 
-    function createOffer(
+    uint256 public constant MAX_OFFER_EXPIRATION_DURATION = 14 days;
+
+    function _createOffer(
         bytes32 _token,
         address _escrowAccount,
         uint _escrowIndex,
         uint _feeBasisPoints
-    ) external onlyAuthorizedBrokers {
+    ) internal returns (uint) {
         EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
@@ -244,6 +246,36 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         escrow.offerCount++;
 
         emit OfferCreated(msg.sender, newOfferIndex, _token, _escrowAccount, _escrowIndex);
+
+        return newOfferIndex;
+    }
+
+    function createOffer(
+        bytes32 _token,
+        address _escrowAccount,
+        uint _escrowIndex,
+        uint _feeBasisPoints
+    ) external onlyAuthorizedBrokers {
+        _createOffer(_token, _escrowAccount, _escrowIndex, _feeBasisPoints);
+    }
+
+    /// @notice Creates an offer with an explicit escrow expiration delay (seconds), applied once
+    /// funds are marked as received instead of the broker-deposit-based fallback duration.
+    function createOfferWithExpiration(
+        bytes32 _token,
+        address _escrowAccount,
+        uint _escrowIndex,
+        uint _feeBasisPoints,
+        uint256 _expirationDuration
+    ) external onlyAuthorizedBrokers {
+        require(_expirationDuration <= MAX_OFFER_EXPIRATION_DURATION, "Expiration duration exceeds maximum allowed");
+
+        uint newOfferIndex = _createOffer(_token, _escrowAccount, _escrowIndex, _feeBasisPoints);
+
+        _offerExpirationConfigs[_token][msg.sender][newOfferIndex] = EscrowStructs.OfferExpirationConfig({
+            isSet: true,
+            duration: _expirationDuration
+        });
     }
 
     function linkOfferToEscrow(
@@ -282,13 +314,23 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
         }
 
-        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
-        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
-        // set expiration to 48 hours from now
-        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
-            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+        EscrowStructs.OfferExpirationConfig storage offerExpirationConfig =
+            _offerExpirationConfigs[_token][escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
+
+        if (offerExpirationConfig.isSet) {
+            // offer was created with an explicit expiration duration; use it
+            uint newExpirationTimestamp = block.timestamp + offerExpirationConfig.duration;
             escrow.expirationTimestamp = newExpirationTimestamp;
             emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
+        } else {
+            EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
+            // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
+            // set expiration to 48 hours from now
+            if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
+                uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+                escrow.expirationTimestamp = newExpirationTimestamp;
+                emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
+            }
         }
 
         escrow.isFundsReceived = true;
@@ -307,13 +349,23 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
             emit EscrowDefrosted(msg.sender, _escrowIndex, _token);
         }
 
-        EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
-        // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
-        // set expiration to 48 hours from now
-        if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
-            uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+        EscrowStructs.OfferExpirationConfig storage offerExpirationConfig =
+            _offerExpirationConfigs[_token][escrow.selectedBrokerAccount][escrow.selectedOfferIndex];
+
+        if (offerExpirationConfig.isSet) {
+            // offer was created with an explicit expiration duration; use it
+            uint newExpirationTimestamp = block.timestamp + offerExpirationConfig.duration;
             escrow.expirationTimestamp = newExpirationTimestamp;
             emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
+        } else {
+            EscrowStructs.BrokerDeposit storage brokerDeposit = _brokerDeposits[escrow.selectedBrokerAccount];
+            // if broker has a security deposit less than 500 USDC / USDT (assuming 6 decimals for the stablecoins)
+            // set expiration to 48 hours from now
+            if (brokerDeposit.amount < MINIMUM_BROKER_DEPOSIT_AMOUNT_ERC20) {
+                uint newExpirationTimestamp = block.timestamp + EXPIRATION_DURATION_FOR_NON_BROKERS;
+                escrow.expirationTimestamp = newExpirationTimestamp;
+                emit EscrowExpirationExtended(msg.sender, _escrowIndex, _token, newExpirationTimestamp);
+            }
         }
 
         escrow.isFundsReceived = true;
