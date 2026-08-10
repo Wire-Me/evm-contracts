@@ -226,7 +226,6 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         EscrowStructs.FXEscrow storage escrow = _escrows[_token][_escrowAccount][_escrowIndex];
         require(escrow.createdAt > 0, "Escrow is not initialized");
         require(escrow.selectedBrokerAccount == address(0), "Escrow already has selected an offer");
-        require(_ongoingBrokerOffers[msg.sender].length < MAX_ONGOING_BROKER_OFFERS, "Broker has reached the maximum number of ongoing offers");
         require(escrow.offerCount < MAX_OFFERS_PER_ESCROW, "Escrow has reached the maximum number of offers");
 
         _offers[_token][msg.sender].push(
