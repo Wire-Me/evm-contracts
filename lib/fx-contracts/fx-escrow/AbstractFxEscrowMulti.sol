@@ -249,6 +249,7 @@ abstract contract AbstractFxEscrowMulti is FxEscrowMultiStorage {
         return newOfferIndex;
     }
 
+    /// @dev Deprecated: use createOfferWithExpiration instead.
     function createOffer(
         bytes32 _token,
         address _escrowAccount,
