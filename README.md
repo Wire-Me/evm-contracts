@@ -43,6 +43,56 @@ escrow contract doesn't care what kind of account or contract is calling it, onl
 address has been added. That's what makes the smart-wallet deprecation possible: any address the
 backend controls can be authorized directly, with or without a wallet contract in front of it.
 
+## Trade lifecycle
+
+In escrow terms the two sides are "user" and "broker"; in trade terms they're seller and buyer -
+the seller (user) deposits stablecoins and receives fiat off-chain, the buyer (broker) pays fiat
+off-chain and receives the stablecoins. Every trade follows the same tree, and a dispute can only
+branch off after the seller commits via `linkOfferToEscrow` - before that point either side can
+still walk away.
+
+```mermaid
+flowchart TD
+    A["createEscrow<br/><i>seller deposits stablecoins</i>"] --> B["createOfferWithExpiration<br/><i>buyer offers to buy them</i>"]
+    B --> C{{"linkOfferToEscrow<br/><i>seller commits - COMMIT POINT</i>"}}
+
+    A -.-> X(["withdrawEscrowEarly<br/><i>seller cancels, gets funds back</i>"])
+    B -.-> X
+
+    C --> D["markFundsAsReceived<br/><i>seller confirms buyer's off-chain payment</i>"]
+    D --> E(["withdrawEscrowAfterCompletion<br/><i>buyer withdraws the stablecoins</i>"])
+
+    C -.->|dispute raised| F["freezeEscrow<br/><i>admin holds funds during review</i>"]
+    F --> G{"admin reviews evidence"}
+    G -->|buyer did pay| H["markFundsAsReceivedAdmin"]
+    H --> E
+    G -->|buyer didn't pay| I["returnEscrow"]
+    I --> J(["withdrawEscrowAfterReturn<br/><i>seller gets funds back</i>"])
+
+    classDef terminal fill:#2f7a3d,color:#fff,stroke:#1e4f27
+    classDef dispute fill:#8a4b08,color:#fff,stroke:#5c3205
+    class X,E,J terminal
+    class F,G,H,I dispute
+```
+
+- **Before the commit point** (`createEscrow` -> `createOfferWithExpiration`): an outstanding
+  offer doesn't lock anything in - `withdrawEscrowEarly` works right up until `linkOfferToEscrow`
+  is called, regardless of whether an offer exists yet.
+- **The commit point** (`linkOfferToEscrow`): the seller picks an offer and locks the trade in.
+  This is the only admin-free action that closes off cancellation - after this,
+  `withdrawEscrowEarly` and `extendEscrow` both revert.
+- **Sunny day**: `markFundsAsReceived` (seller confirms) -> `withdrawEscrowAfterCompletion`
+  (buyer withdraws, minus the platform fee).
+- **Dispute** (only reachable after the commit point): admin calls `freezeEscrow` while
+  reviewing evidence, then resolves it one of two ways:
+  - Buyer did pay -> `markFundsAsReceivedAdmin` -> buyer calls the same
+    `withdrawEscrowAfterCompletion` as the sunny-day path.
+  - Buyer didn't pay -> `returnEscrow` -> seller calls `withdrawEscrowAfterReturn`.
+
+`test/EscrowLifecycle.t.sol` is organized around this same tree. `createEscrow` /
+`createOfferWithExpiration` / `linkOfferToEscrow` / `markFundsAsReceived` happy paths live in
+`test/SmartWalletEscrow.t.sol`.
+
 ## Deprecated: smart-wallet layer
 
 `src/fx-contracts/smart-wallet/` (`AbstractSmartWalletMulti`, `SmartWalletMulti`,
