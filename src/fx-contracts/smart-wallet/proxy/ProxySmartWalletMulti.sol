@@ -4,6 +4,12 @@ pragma solidity ^0.8.30;
 import {SmartWalletMultiStorage} from "../SmartWalletMultiStorage.sol";
 import "../configuration/WalletConfig.sol";
 
+/// @custom:deprecated Deprecated in favor of Openfort embedded wallets (see user-auth /
+/// web-client). Still in active production use: tx-conductor currently routes every escrow
+/// operation through a deployed instance of this proxy per user/broker instead of calling
+/// FxEscrowMulti directly. Do not build new features on this layer. It can be removed once
+/// tx-conductor calls FxEscrowMulti directly using Openfort-controlled addresses registered
+/// via addAuthorizedUser/addAuthorizedBroker, and existing proxy wallets are migrated off.
 contract ProxySmartWalletMulti is SmartWalletMultiStorage {
     constructor(address _implementationAddress, address _adminAddress, address _walletConfigAddress) {
         _implementation = _implementationAddress;
