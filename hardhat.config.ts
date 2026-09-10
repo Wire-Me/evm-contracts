@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     }
   },
   paths: {
-    sources: "./lib"
+    sources: "./src"
   }
 };
 

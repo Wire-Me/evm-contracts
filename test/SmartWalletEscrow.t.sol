@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.30;
 
-import "../lib/fx-contracts/fx-escrow/FxEscrowMulti.sol";
+import "../src/fx-contracts/fx-escrow/FxEscrowMulti.sol";
 
-import "../lib/fx-contracts/fx-escrow/proxy/ProxyFxEscrowMulti.sol";
-import "../lib/fx-contracts/smart-wallet/SmartWalletMulti.sol";
-import "../lib/fx-contracts/smart-wallet/proxy/ProxySmartWalletMulti.sol";
+import "../src/fx-contracts/fx-escrow/proxy/ProxyFxEscrowMulti.sol";
+import "../src/fx-contracts/smart-wallet/SmartWalletMulti.sol";
+import "../src/fx-contracts/smart-wallet/proxy/ProxySmartWalletMulti.sol";
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/forge-std/src/Test.sol";
