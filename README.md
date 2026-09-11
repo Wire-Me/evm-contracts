@@ -116,9 +116,11 @@ a backend migration in other repos, not something this repo can do on its own.
   an explicit remapping in `foundry.toml` - don't expect to find it under `lib/`.
 - `test/` - Foundry tests. `test/helpers/EscrowTestBase.sol` holds the shared
   deploy-escrow-and-two-wallets setup that most suites inherit from.
-- `ignition/`, `hardhat.config.ts` - the `@nomicfoundation/hardhat-toolbox` scaffold. Hardhat
-  Ignition is not used for real deployments (see [Deployment](#deployment)), and `npx hardhat
-  compile` currently fails outright (`ts-node` isn't in `package.json`'s devDependencies).
+- `scripts/deploy/` - deployment functions and the `deploy-all` hardhat task (see
+  [Deployment](#deployment)).
+- `hardhat.config.ts` - compiles `src/` (solc 0.8.30, matching `foundry.toml`) and registers the
+  `deploy-all` task. Hardhat Ignition isn't used for anything here; there used to be an
+  `ignition/` folder of unused boilerplate, removed entirely rather than left around.
 
 ## Setup
 
@@ -176,20 +178,51 @@ and on pushes to `main`.
 
 ## Deployment
 
-This repo does not deploy contracts on its own. `contracts-manager` pulls it in as a git
-submodule and owns actual deployment and address bookkeeping, via its own hardhat tasks
-(`deploy-and-store-fx-escrow-multi`, `deploy-and-store-fx-escrow-multi-proxy`,
-`deploy-and-store-smart-wallet-multi`, `deploy-and-store-wallet-config`, etc.). Hardhat Ignition
-modules in this repo's `ignition/` folder are not part of that flow.
+This repo doesn't run its own deployments in production, but it does own *how* each contract
+gets deployed - `contracts-manager` pulls it in as a git submodule and is responsible for
+everything downstream of that (choosing a network/signer, address bookkeeping in its own DB,
+secrets-manager key resolution).
+
+`scripts/deploy/` exports one function per contract (`deployEscrowConfig`, `deployFxEscrowMulti`,
+`deployProxyFxEscrowMulti`, `deployWalletConfig`, `deploySmartWalletMulti`,
+`deployProxySmartWalletMulti`), each taking a `HardhatRuntimeEnvironment`, a `Signer`, and
+whatever constructor args that contract needs. The point of centralizing these here rather than
+in `contracts-manager`: constructor signatures are hand-duplicated today in
+`contracts-manager/scripts/hardhat-tasks/deploy-and-store-*.ts`, and they drift - as of this
+writing, `deploy-and-store-fx-escrow-multi-proxy.ts` passes only 3 of `ProxyFxEscrowMulti`'s 5
+constructor args (missing `brokerDepositAmount` and `expirationDurationForNonBrokers`, added
+after that task was last touched) and would revert if run today. Wiring `contracts-manager`'s
+tasks to import and call these functions instead of re-deriving the arg list themselves fixes
+that class of bug at the source: change a constructor, update the paired function in the same
+commit, every caller picks it up.
+
+`contracts-manager`'s existing tasks keep everything they already do - DB writes, secrets-manager
+private key resolution, network/chainId mapping - they'd just replace their own
+`hre.ethers.getContractFactory(name).deploy(...)` call with the matching function from here.
+
+For bootstrapping a fresh network directly from this repo (mainly local/testnet use), run:
+
+```bash
+USDC_ERC20_ADDRESS=0x... USDT_ERC20_ADDRESS=0x... npx hardhat deploy-all --network localhost
+```
+
+This deploys `EscrowConfig`, `FxEscrowMulti` + `ProxyFxEscrowMulti`, `WalletConfig`, and the
+`SmartWalletMulti` implementation, in that order. It does not deploy per-user/broker
+`ProxySmartWalletMulti` or `ProxyFxEscrowMulti` instances beyond the first - those are deployed
+individually elsewhere. See `.env.example` for the required/optional env vars.
+
+Hardhat Ignition modules are not part of any of this - the `ignition/` folder was removed as
+dead boilerplate (see git history if you're looking for it).
 
 ## Known issues
 
 - `FxEscrowMulti`'s compiled runtime bytecode is currently ~808 bytes over the EIP-170
-  24,576-byte contract size limit (run `forge build --sizes` to see current numbers). This
-  hasn't broken anything because the already-deployed implementation predates whatever growth
-  pushed it over, but a fresh redeploy of this exact contract would revert on-chain. Worth
-  trimming before the next time `FxEscrowMulti` itself (not just the proxy) needs to be
-  redeployed.
+  24,576-byte contract size limit (run `forge build --sizes` to see current numbers). This is a
+  live, confirmed blocker, not just a lint warning: running `deploy-all` against a local Hardhat
+  node fails at the `FxEscrowMulti` deploy step with "trying to deploy a contract whose code is
+  too large." The already-deployed implementation predates whatever growth pushed it over, but a
+  fresh redeploy of this exact contract will revert on-chain until it's trimmed (lower the
+  optimizer's `runs`, or split logic out of the abstract contract).
 
 ## License
 
