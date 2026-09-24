@@ -2,4 +2,10 @@
 src = "src"
 libs = ["lib"]
 via_ir = true
+# Keep these three in sync with contracts-manager's foundry.toml and hardhat.config.ts - they
+# govern the real deployed bytecode size (FxEscrowMulti doesn't fit under EIP-170 without the
+# optimizer on) and evm target. See README.md's Deployment section for the full story.
+optimizer = true
+optimizer_runs = 200
+evm_version = "paris"
 remappings = ["@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"]

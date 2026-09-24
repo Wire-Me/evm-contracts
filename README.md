@@ -214,15 +214,16 @@ individually elsewhere. See `.env.example` for the required/optional env vars.
 Hardhat Ignition modules are not part of any of this - the `ignition/` folder was removed as
 dead boilerplate (see git history if you're looking for it).
 
-## Known issues
-
-- `FxEscrowMulti`'s compiled runtime bytecode is currently ~808 bytes over the EIP-170
-  24,576-byte contract size limit (run `forge build --sizes` to see current numbers). This is a
-  live, confirmed blocker, not just a lint warning: running `deploy-all` against a local Hardhat
-  node fails at the `FxEscrowMulti` deploy step with "trying to deploy a contract whose code is
-  too large." The already-deployed implementation predates whatever growth pushed it over, but a
-  fresh redeploy of this exact contract will revert on-chain until it's trimmed (lower the
-  optimizer's `runs`, or split logic out of the abstract contract).
+`foundry.toml` and `hardhat.config.ts`'s solidity settings (`optimizer = true`, `runs = 200`,
+`evm_version = "paris"`) are deliberately kept identical to `contracts-manager`'s own configs for
+both. They used to diverge - this repo's own configs never turned the optimizer on, which is a
+huge size difference (`FxEscrowMulti` compiled to ~29KB unoptimized vs. ~12KB optimized, against
+a 24,576-byte EIP-170 limit) - `contracts-manager`'s configs, the ones that actually govern real
+deployments, had it right the whole time, so production was never at risk. But it meant this
+repo's own `forge build --sizes`, `forge test`, and the `deploy-all` task above all failed or
+misreported against a contract that deploys fine for real. If you ever touch the optimizer/evm
+version in either config here, change it in `contracts-manager` too (or vice versa) - silent
+drift between them is exactly what caused this.
 
 ## License
 

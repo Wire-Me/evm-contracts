@@ -7,7 +7,19 @@ const sepoliaAccounts = [process.env.SEPOLIA_PRIVATE_KEY_1, process.env.SEPOLIA_
   .filter((key): key is string => Boolean(key));
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.30",
+  // Keep these settings in sync with contracts-manager's hardhat.config.ts and foundry.toml -
+  // they govern the real deployed bytecode size (FxEscrowMulti doesn't fit under EIP-170
+  // without the optimizer on) and evm target. See README.md's Deployment section for why.
+  solidity: {
+    version: "0.8.30",
+    settings: {
+      viaIR: true,
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
   networks: {
     sepolia: {
       url: "https://sepolia.infura.io/v3/16a91573c45d4467b517aba983248451",
