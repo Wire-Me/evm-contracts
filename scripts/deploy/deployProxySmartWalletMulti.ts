@@ -1,5 +1,5 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import type { Signer } from "ethers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 export interface DeployProxySmartWalletMultiParams {
   implementationAddress: string;
@@ -11,7 +11,7 @@ export interface DeployProxySmartWalletMultiParams {
 /// the existing tx-conductor-driven wallet-per-user flow, not for new usage.
 export async function deployProxySmartWalletMulti(
   hre: HardhatRuntimeEnvironment,
-  signer: Signer,
+  signer: HardhatEthersSigner,
   params: DeployProxySmartWalletMultiParams,
 ) {
   const factory = await hre.ethers.getContractFactory("ProxySmartWalletMulti", signer);

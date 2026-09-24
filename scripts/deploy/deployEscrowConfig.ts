@@ -1,5 +1,5 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import type { Signer } from "ethers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 export interface DeployEscrowConfigParams {
   usdcErc20Address: string;
@@ -10,7 +10,7 @@ export interface DeployEscrowConfigParams {
 /// FxEscrowMulti / ProxyFxEscrowMulti to read from.
 export async function deployEscrowConfig(
   hre: HardhatRuntimeEnvironment,
-  signer: Signer,
+  signer: HardhatEthersSigner,
   params: DeployEscrowConfigParams,
 ) {
   const factory = await hre.ethers.getContractFactory("EscrowConfig", signer);

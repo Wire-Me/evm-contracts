@@ -1,5 +1,5 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import type { Signer } from "ethers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 export interface DeployWalletConfigParams {
   fxEscrowMultiContractAddress: string;
@@ -12,7 +12,7 @@ export interface DeployWalletConfigParams {
 /// constructor arg here.
 export async function deployWalletConfig(
   hre: HardhatRuntimeEnvironment,
-  signer: Signer,
+  signer: HardhatEthersSigner,
   params: DeployWalletConfigParams,
 ) {
   const factory = await hre.ethers.getContractFactory("WalletConfig", signer);

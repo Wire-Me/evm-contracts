@@ -1,5 +1,5 @@
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
-import type { Signer } from "ethers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 export interface DeployProxyFxEscrowMultiParams {
   implementationAddress: string;
@@ -18,7 +18,7 @@ export interface DeployProxyFxEscrowMultiParams {
 /// truth callers (contracts-manager included) should use instead of hand-rolling the arg list.
 export async function deployProxyFxEscrowMulti(
   hre: HardhatRuntimeEnvironment,
-  signer: Signer,
+  signer: HardhatEthersSigner,
   params: DeployProxyFxEscrowMultiParams,
 ) {
   const factory = await hre.ethers.getContractFactory("ProxyFxEscrowMulti", signer);
