@@ -200,16 +200,34 @@ commit, every caller picks it up.
 private key resolution, network/chainId mapping - they'd just replace their own
 `hre.ethers.getContractFactory(name).deploy(...)` call with the matching function from here.
 
-For bootstrapping a fresh network directly from this repo (mainly local/testnet use), run:
+For bootstrapping a fresh network directly from this repo, `localhost` is the default network -
+`npm run deploy-all` targets it with no flags needed. Start a node first (in a separate terminal,
+it needs to keep running):
 
 ```bash
-USDC_ERC20_ADDRESS=0x... USDT_ERC20_ADDRESS=0x... npx hardhat deploy-all --network localhost
+npx hardhat node
+npm run deploy-all
+```
+
+If nothing's listening at the configured URL (`ETH_LOCAL_NODE_URL`, or `http://127.0.0.1:8545` if
+unset), `deploy-all` fails fast with a clear error instead of a cryptic connection error - it
+checks before doing anything else. Note that on a machine with WireMe's docker-compose dev stack
+running, `wireme-eth-node-1` already occupies port 8545 - `deploy-all` will happily deploy there
+too (it's just another node at that URL), so set `ETH_LOCAL_NODE_URL` to a different port first if
+you want an isolated throwaway chain instead.
+
+For testnet/mainnet:
+
+```bash
+npm run deploy-all:sepolia
+npm run deploy-all:base
 ```
 
 This deploys `EscrowConfig`, `FxEscrowMulti` + `ProxyFxEscrowMulti`, `WalletConfig`, and the
 `SmartWalletMulti` implementation, in that order. It does not deploy per-user/broker
 `ProxySmartWalletMulti` or `ProxyFxEscrowMulti` instances beyond the first - those are deployed
-individually elsewhere. See `.env.example` for the required/optional env vars.
+individually elsewhere. See `.env.example` for the required/optional env vars - `base` deploys
+real funds to real mainnet, so `BASE_PRIVATE_KEY_1`/`_2` are deliberately left blank there.
 
 Hardhat Ignition modules are not part of any of this - the `ignition/` folder was removed as
 dead boilerplate (see git history if you're looking for it).

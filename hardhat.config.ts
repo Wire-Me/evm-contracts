@@ -6,7 +6,13 @@ import "./scripts/deploy/deployAllTask"
 const sepoliaAccounts = [process.env.SEPOLIA_PRIVATE_KEY_1, process.env.SEPOLIA_PRIVATE_KEY_2]
   .filter((key): key is string => Boolean(key));
 
+const baseAccounts = [process.env.BASE_PRIVATE_KEY_1, process.env.BASE_PRIVATE_KEY_2]
+  .filter((key): key is string => Boolean(key));
+
 const config: HardhatUserConfig = {
+  // localhost by default - see deployAllTask.ts for the check that fails fast with a clear
+  // error if nothing's actually listening there instead of a cryptic connection error.
+  defaultNetwork: "localhost",
   // Keep these settings in sync with contracts-manager's hardhat.config.ts and foundry.toml -
   // they govern the real deployed bytecode size (FxEscrowMulti doesn't fit under EIP-170
   // without the optimizer on) and evm target. See README.md's Deployment section for why.
@@ -27,6 +33,11 @@ const config: HardhatUserConfig = {
     },
     localhost: {
       url: process.env.ETH_LOCAL_NODE_URL || "http://127.0.0.1:8545", // when deploying to localhost deploy to the ETH node container
+    },
+    base: {
+      chainId: 8453,
+      url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
+      accounts: baseAccounts
     }
   },
   paths: {

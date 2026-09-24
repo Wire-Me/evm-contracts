@@ -18,6 +18,18 @@ const DEFAULT_EXPIRATION_DURATION_FOR_NON_BROKERS_SECONDS = 48n * 60n * 60n; // 
 /// deploying signer if unset.
 task("deploy-all", "Deploys EscrowConfig, FxEscrowMulti + proxy, WalletConfig, and SmartWalletMulti")
   .setAction(async (_args, hre) => {
+    if (hre.network.name === "localhost") {
+      const url = (hre.network.config as { url?: string }).url ?? "the configured localhost RPC";
+      try {
+        await hre.ethers.provider.getBlockNumber();
+      } catch {
+        throw new Error(
+          `No local node detected at ${url}. Start one first with \`npx hardhat node\` ` +
+          `(in a separate terminal - it needs to keep running), then re-run this task.`,
+        );
+      }
+    }
+
     const [signer] = await hre.ethers.getSigners();
     if (!signer) {
       throw new Error("No signer available. Configure an account for this network (see .env.example).");

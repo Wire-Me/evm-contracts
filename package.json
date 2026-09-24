@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy-all": "hardhat deploy-all"
+    "deploy-all": "hardhat deploy-all",
+    "deploy-all:sepolia": "hardhat deploy-all --network sepolia",
+    "deploy-all:base": "hardhat deploy-all --network base"
   },
   "author": "Ian Pierce",
   "license": "GPL-3.0-or-later",
