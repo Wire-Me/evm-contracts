@@ -13,9 +13,8 @@
   "author": "Ian Pierce",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "ethers": "6.13.7",
-    "hardhat": "^2.24.1",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "hardhat": "^2.29.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
