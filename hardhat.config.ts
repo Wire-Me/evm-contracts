@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import 'dotenv/config'
 import "./scripts/deploy/deployAllTask"
+import "./scripts/deploy/deployTokensTask"
 
 const sepoliaAccounts = [process.env.SEPOLIA_PRIVATE_KEY_1, process.env.SEPOLIA_PRIVATE_KEY_2]
   .filter((key): key is string => Boolean(key));

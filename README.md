@@ -109,17 +109,22 @@ a backend migration in other repos, not something this repo can do on its own.
 
 ## Repository layout
 
-- `src/` - WireMe's own contracts (see Architecture above).
+- `src/` - WireMe's own contracts (see Architecture above). `src/test-tokens/TestStablecoin.sol` is
+  the one exception to "production contracts": it's a mock ERC20 for local/testnet use, and it lives
+  under `src/` because that's the only path Hardhat compiles, so it's the only way to make it
+  deployable. The Foundry tests use it too, so there's one mock ERC20 rather than two.
 - `lib/` - external dependencies only: `forge-std`, installed as a git submodule
   (`git submodule update --init` after cloning). `@openzeppelin/contracts` is the other
   dependency contracts import from, but it's installed via npm into `node_modules` instead, with
   an explicit remapping in `foundry.toml` - don't expect to find it under `lib/`.
 - `test/` - Foundry tests. `test/helpers/EscrowTestBase.sol` holds the shared
   deploy-escrow-and-two-wallets setup that most suites inherit from.
-- `scripts/deploy/` - deployment functions and the `deploy-all` hardhat task (see
-  [Deployment](#deployment)).
+- `scripts/deploy/` - deployment functions plus the `deploy-all` and `deploy-tokens` hardhat tasks
+  (see [Deployment](#deployment)).
+- `deployments.json` - gitignored record of what's deployed on each network; `deployments.example.json`
+  is the committed template.
 - `hardhat.config.ts` - compiles `src/` (solc 0.8.30, matching `foundry.toml`) and registers the
-  `deploy-all` task. Hardhat Ignition isn't used for anything here; there used to be an
+  deploy tasks. Hardhat Ignition isn't used for anything here; there used to be an
   `ignition/` folder of unused boilerplate, removed entirely rather than left around.
 
 ## Setup
@@ -200,34 +205,68 @@ commit, every caller picks it up.
 private key resolution, network/chainId mapping - they'd just replace their own
 `hre.ethers.getContractFactory(name).deploy(...)` call with the matching function from here.
 
-For bootstrapping a fresh network directly from this repo, `localhost` is the default network -
-`npm run deploy-all` targets it with no flags needed. Start a node first (in a separate terminal,
-it needs to keep running):
+### Deployment state file
+
+`deployments.json` (gitignored, see `deployments.example.json` for the shape) records what's
+deployed where: the ERC20 addresses each network's escrow is configured against, plus the addresses
+of the WireMe contracts themselves, keyed by network name.
+
+Both deploy tasks read it before deploying and write to it after, creating it on first run. It's
+machine-local by design: addresses differ per developer, and a local chain reset invalidates them.
+Which is why the tasks don't just trust it - they check each recorded address for bytecode on the
+connected chain. An address with no code means the chain was reset, so `deploy-tokens` replaces the
+stale record rather than reusing a dead address, and `deploy-all` warns loudly if it's about to
+wire the escrow up to a token that isn't there.
+
+### Local
+
+`localhost` is the default network, so no `--network` flag is needed. Start a node first (separate
+terminal, it needs to keep running), deploy the stand-in tokens, then the contracts:
 
 ```bash
 npx hardhat node
+npm run deploy-tokens
 npm run deploy-all
 ```
 
-If nothing's listening at the configured URL (`ETH_LOCAL_NODE_URL`, or `http://127.0.0.1:8545` if
-unset), `deploy-all` fails fast with a clear error instead of a cryptic connection error - it
-checks before doing anything else. Note that on a machine with WireMe's docker-compose dev stack
-running, `wireme-eth-node-1` already occupies port 8545 - `deploy-all` will happily deploy there
-too (it's just another node at that URL), so set `ETH_LOCAL_NODE_URL` to a different port first if
-you want an isolated throwaway chain instead.
-
-For testnet/mainnet:
+`deploy-tokens` deploys `TestStablecoin` (`src/test-tokens/`) twice, as USDC and USDT, since a
+fresh chain has no real stablecoins to point at. Minting is unrestricted so it doubles as a faucet:
 
 ```bash
+cast send <token> "mint(address,uint256)" <recipient> 1000000000 --rpc-url http://127.0.0.1:8545
+```
+
+Re-running `deploy-tokens` is a no-op when the recorded tokens are still live, because redeploying
+would orphan every balance minted against the old ones. Pass `--redeploy` to override.
+
+If nothing's listening at the configured URL (`ETH_LOCAL_NODE_URL`, or `http://127.0.0.1:8545` if
+unset), both tasks fail fast with a clear error rather than a cryptic connection error. Note that on
+a machine running WireMe's docker-compose dev stack, `wireme-eth-node-1` already occupies port 8545,
+and these tasks will happily deploy there since it's just another node at that URL. Set
+`ETH_LOCAL_NODE_URL` to a different port if you want an isolated throwaway chain.
+
+### Testnet and mainnet
+
+```bash
+npm run deploy-tokens:sepolia   # stand-in tokens, since testnet stablecoins are a hassle to source
 npm run deploy-all:sepolia
+
 npm run deploy-all:base
 ```
 
-This deploys `EscrowConfig`, `FxEscrowMulti` + `ProxyFxEscrowMulti`, `WalletConfig`, and the
+There's deliberately no useful `deploy-tokens:base`: real USDC and USDT already exist on Base, so
+the task refuses to run against a mainnet chain id (1, 8453, 10, 137, 42161) unless you pass
+`--allow-mainnet`. For mainnet you fill in the canonical token addresses under `base.tokens` in
+`deployments.json` yourself, from the issuers' own documentation. This repo intentionally doesn't
+hardcode them anywhere, because a wrong token address in a deploy tool is a bad failure mode.
+
+`deploy-all` deploys `EscrowConfig`, `FxEscrowMulti` + `ProxyFxEscrowMulti`, `WalletConfig`, and the
 `SmartWalletMulti` implementation, in that order. It does not deploy per-user/broker
 `ProxySmartWalletMulti` or `ProxyFxEscrowMulti` instances beyond the first - those are deployed
-individually elsewhere. See `.env.example` for the required/optional env vars - `base` deploys
-real funds to real mainnet, so `BASE_PRIVATE_KEY_1`/`_2` are deliberately left blank there.
+individually elsewhere. Token addresses come from `deployments.json`, or from
+`USDC_ERC20_ADDRESS`/`USDT_ERC20_ADDRESS` if you want to override what's recorded. See
+`.env.example` for the rest - `base` spends real funds, so `BASE_PRIVATE_KEY_1`/`_2` are
+deliberately left blank there.
 
 Hardhat Ignition modules are not part of any of this - the `ignition/` folder was removed as
 dead boilerplate (see git history if you're looking for it).

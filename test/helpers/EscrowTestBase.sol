@@ -6,19 +6,13 @@ import "../../src/fx-contracts/fx-escrow/proxy/ProxyFxEscrowMulti.sol";
 import "../../src/fx-contracts/smart-wallet/SmartWalletMulti.sol";
 import "../../src/fx-contracts/smart-wallet/proxy/ProxySmartWalletMulti.sol";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../../src/test-tokens/TestStablecoin.sol";
 import "../../lib/forge-std/src/Test.sol";
 
-contract MockUSDC is ERC20 {
-    constructor() ERC20("USDC", "USDC") {}
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-
-    function decimals() public pure override returns (uint8) {
-        return 6;
-    }
+/// @dev The tests and the deploy scripts share one mock ERC20 (src/test-tokens/TestStablecoin.sol)
+/// so there's a single definition to keep in step with what actually gets deployed locally.
+function newTestUsdc() returns (TestStablecoin) {
+    return new TestStablecoin("Test USD Coin", "USDC", 6);
 }
 
 /// @notice Shared deployment/setup for escrow + smart-wallet test suites. Deploys one escrow
@@ -33,7 +27,7 @@ abstract contract EscrowTestBase is Test {
 
     address internal admin = address(1);
 
-    MockUSDC internal usdc;
+    TestStablecoin internal usdc;
 
     FxEscrowMulti internal escrowImpl;
     ProxyFxEscrowMulti internal escrowProxy;
@@ -53,7 +47,7 @@ abstract contract EscrowTestBase is Test {
         // -----------------
         // Deploy Mock Token
         // -----------------
-        usdc = new MockUSDC();
+        usdc = newTestUsdc();
 
         // -----------------
         // Deploy Escrow

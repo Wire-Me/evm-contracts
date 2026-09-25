@@ -152,7 +152,7 @@ contract EscrowAdminTest is EscrowTestBase {
     // -----------------
 
     function test_SetConfigAddress_UpdatesConfig() public {
-        MockUSDC otherToken = new MockUSDC();
+        TestStablecoin otherToken = newTestUsdc();
         EscrowConfig newConfig = new EscrowConfig(address(otherToken), address(otherToken));
 
         vm.prank(admin);

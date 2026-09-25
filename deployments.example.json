@@ -1,0 +1,43 @@
+{
+  "_comment": [
+    "Shape of the gitignored deployments.json, which records what's deployed where.",
+    "Written automatically by the deploy-tokens and deploy-all hardhat tasks - you don't normally",
+    "edit it by hand. The exception is mainnet token addresses: this repo never deploys USDC/USDT",
+    "to mainnet, so fill those in yourself from the issuers' own documentation. Do not copy them",
+    "from memory or from a snippet like this one.",
+    "",
+    "Addresses recorded here are verified against the chain before reuse: an entry whose address",
+    "has no bytecode means the chain was reset, and the deploy tasks will replace it."
+  ],
+  "localhost": {
+    "chainId": 31337,
+    "updatedAt": "2026-09-24T00:00:00.000Z",
+    "tokens": {
+      "USDC": "0x0000000000000000000000000000000000000000",
+      "USDT": "0x0000000000000000000000000000000000000000"
+    },
+    "contracts": {
+      "EscrowConfig": "0x0000000000000000000000000000000000000000",
+      "FxEscrowMulti": "0x0000000000000000000000000000000000000000",
+      "ProxyFxEscrowMulti": "0x0000000000000000000000000000000000000000",
+      "WalletConfig": "0x0000000000000000000000000000000000000000",
+      "SmartWalletMulti": "0x0000000000000000000000000000000000000000"
+    }
+  },
+  "sepolia": {
+    "chainId": 11155111,
+    "tokens": {
+      "USDC": "deployed by `npm run deploy-tokens:sepolia`",
+      "USDT": "deployed by `npm run deploy-tokens:sepolia`"
+    },
+    "contracts": {}
+  },
+  "base": {
+    "chainId": 8453,
+    "tokens": {
+      "USDC": "FILL IN: canonical Circle USDC on Base, from Circle's own docs",
+      "USDT": "FILL IN: canonical USDT on Base, from Tether's own docs"
+    },
+    "contracts": {}
+  }
+}

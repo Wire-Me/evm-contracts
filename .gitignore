@@ -21,3 +21,8 @@ ignition/deployments/chain-31337
 
 # Generated files
 /out
+
+# Deployed-address state per network, written by the deploy-tokens / deploy-all tasks.
+# Machine-local: addresses differ per developer and get wiped whenever a local chain resets.
+# See deployments.example.json for the shape.
+/deployments.json

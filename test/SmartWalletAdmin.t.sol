@@ -58,7 +58,7 @@ contract SmartWalletAdminTest is EscrowTestBase {
     // -----------------
 
     function test_SetWalletConfig_UpdatesConfig() public {
-        MockUSDC otherToken = new MockUSDC();
+        TestStablecoin otherToken = newTestUsdc();
         WalletConfig newConfig = new WalletConfig(address(escrow), address(otherToken), address(otherToken));
 
         vm.prank(admin);
@@ -68,7 +68,7 @@ contract SmartWalletAdminTest is EscrowTestBase {
     }
 
     function test_SetWalletConfig_RevertsIfNotAdmin() public {
-        MockUSDC otherToken = new MockUSDC();
+        TestStablecoin otherToken = newTestUsdc();
         WalletConfig newConfig = new WalletConfig(address(escrow), address(otherToken), address(otherToken));
 
         vm.prank(randomAddress);
@@ -77,7 +77,7 @@ contract SmartWalletAdminTest is EscrowTestBase {
     }
 
     function test_SetWalletConfigAndImplementation_UpdatesBoth() public {
-        MockUSDC otherToken = new MockUSDC();
+        TestStablecoin otherToken = newTestUsdc();
         WalletConfig newConfig = new WalletConfig(address(escrow), address(otherToken), address(otherToken));
         SmartWalletMulti newImpl = new SmartWalletMulti();
 
