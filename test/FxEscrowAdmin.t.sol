@@ -8,19 +8,24 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/forge-std/src/Test.sol";
 
 contract MockStablecoin is ERC20 {
-    constructor() ERC20("USDC", "USDC") {}
+    uint8 private immutable tokenDecimals;
+
+    constructor(uint8 _tokenDecimals) ERC20("USDC", "USDC") {
+        tokenDecimals = _tokenDecimals;
+    }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
 
-    function decimals() public pure override returns (uint8) {
-        return 6;
+    function decimals() public view override returns (uint8) {
+        return tokenDecimals;
     }
 }
 
 // The escrow's events are declared on the contract, so they are redeclared here for vm.expectEmit.
-contract FxEscrowAdminTest is Test {
+// Runs once per stablecoin decimals the escrow is deployed with (see the contracts at the end).
+abstract contract FxEscrowAdminTest is Test {
     event EscrowDefrosted(address indexed _creatorOfEscrow, uint indexed _escrowIndex, bytes32 indexed _currency);
     event EscrowExpirationExtended(
         address indexed _creatorOfEscrow,
@@ -31,8 +36,8 @@ contract FxEscrowAdminTest is Test {
     event FundsReceivedAdmin(address indexed _creatorOfEscrow, uint indexed _escrowIndex, bytes32 indexed _currency);
 
     bytes32 internal constant USDC = keccak256("USDC");
-    uint internal constant ESCROW_AMOUNT = 100 * 10 ** 6;
-    uint internal constant BROKER_DEPOSIT = 500 * 10 ** 6;
+    uint internal escrowAmount;
+    uint internal brokerDeposit;
 
     // In production the admin is the Safe, so this stands in for it.
     address internal admin = makeAddr("safe");
@@ -42,8 +47,13 @@ contract FxEscrowAdminTest is Test {
     MockStablecoin internal usdc;
     FxEscrowMulti internal escrow;
 
+    function _tokenDecimals() internal pure virtual returns (uint8);
+
     function setUp() public {
-        usdc = new MockStablecoin();
+        uint oneToken = 10 ** _tokenDecimals();
+        escrowAmount = 100 * oneToken;
+        brokerDeposit = 500 * oneToken;
+        usdc = new MockStablecoin(_tokenDecimals());
 
         vm.startPrank(admin);
         EscrowConfig escrowConfig = new EscrowConfig(address(usdc), address(usdc));
@@ -51,7 +61,7 @@ contract FxEscrowAdminTest is Test {
             address(new FxEscrowMulti()),
             admin,
             address(escrowConfig),
-            BROKER_DEPOSIT,
+            brokerDeposit,
             48 hours
         );
         escrow = FxEscrowMulti(payable(address(proxy)));
@@ -59,14 +69,14 @@ contract FxEscrowAdminTest is Test {
         escrow.addAuthorizedBroker(broker);
         vm.stopPrank();
 
-        usdc.mint(seller, ESCROW_AMOUNT);
-        usdc.mint(broker, BROKER_DEPOSIT);
+        usdc.mint(seller, escrowAmount);
+        usdc.mint(broker, brokerDeposit);
     }
 
     function _fundEscrowAndLinkOffer(bool withExplicitExpiration, uint expirationDuration) internal {
         vm.startPrank(seller);
-        usdc.approve(address(escrow), ESCROW_AMOUNT);
-        escrow.createEscrow(USDC, ESCROW_AMOUNT);
+        usdc.approve(address(escrow), escrowAmount);
+        escrow.createEscrow(USDC, escrowAmount);
         vm.stopPrank();
 
         vm.prank(broker);
@@ -149,8 +159,8 @@ contract FxEscrowAdminTest is Test {
     // A broker with a full deposit and no explicit offer expiration keeps the escrow's expiry as is.
     function test_MarkFundsAsReceivedAdmin_BrokerWithDeposit_EmitsNoExpirationEvent() public {
         vm.startPrank(broker);
-        usdc.approve(address(escrow), BROKER_DEPOSIT);
-        escrow.upsertSecurityDeposit(USDC, BROKER_DEPOSIT);
+        usdc.approve(address(escrow), brokerDeposit);
+        escrow.upsertSecurityDeposit(USDC, brokerDeposit);
         vm.stopPrank();
         _fundEscrowAndLinkOffer(false, 0);
 
@@ -170,5 +180,19 @@ contract FxEscrowAdminTest is Test {
         vm.prank(seller);
         vm.expectRevert("Sender is not an authorized admin account");
         escrow.markFundsAsReceivedAdmin(USDC, seller, 0);
+    }
+}
+
+// USDC and USDT on Base, Ethereum and Sepolia
+contract FxEscrowAdmin6DecimalTokenTest is FxEscrowAdminTest {
+    function _tokenDecimals() internal pure override returns (uint8) {
+        return 6;
+    }
+}
+
+// The Binance-Peg USDC and USDT on BNB Smart Chain
+contract FxEscrowAdmin18DecimalTokenTest is FxEscrowAdminTest {
+    function _tokenDecimals() internal pure override returns (uint8) {
+        return 18;
     }
 }

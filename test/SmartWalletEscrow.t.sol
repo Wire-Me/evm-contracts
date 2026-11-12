@@ -11,21 +11,27 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../lib/forge-std/src/Test.sol";
 
 contract MockUSDC is ERC20 {
-    constructor() ERC20("USDC", "USDC") {}
+    uint8 private immutable tokenDecimals;
+
+    constructor(uint8 _tokenDecimals) ERC20("USDC", "USDC") {
+        tokenDecimals = _tokenDecimals;
+    }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
 
-    function decimals() public pure override returns (uint8) {
-        return 6;
+    function decimals() public view override returns (uint8) {
+        return tokenDecimals;
     }
 }
 
-contract SmartWalletEscrowTest is Test {
+// Runs once per stablecoin decimals the escrow is deployed with (see the contracts at the end).
+abstract contract SmartWalletEscrowTest is Test {
 
-    uint brokerInitialBalance = 1000 * 10 ** 6;
-    uint userInitialBalance = 1000 * 10 ** 6;
+    uint internal oneToken;
+    uint brokerInitialBalance;
+    uint userInitialBalance;
     bytes32 internal constant USDC = keccak256("USDC");
 
     address internal admin = address(1);
@@ -45,13 +51,19 @@ contract SmartWalletEscrowTest is Test {
     EscrowConfig internal escrowConfig;
     WalletConfig internal walletConfig;
 
+    function _tokenDecimals() internal pure virtual returns (uint8);
+
     function setUp() public {
+        oneToken = 10 ** _tokenDecimals();
+        brokerInitialBalance = 1000 * oneToken;
+        userInitialBalance = 1000 * oneToken;
+
         vm.startPrank(admin);
 
         // -----------------
         // Deploy Mock Token
         // -----------------
-        usdc = new MockUSDC();
+        usdc = new MockUSDC(_tokenDecimals());
 
         // -----------------
         // Deploy Escrow
@@ -67,7 +79,7 @@ contract SmartWalletEscrowTest is Test {
             address(escrowImpl),
             admin,
             address(escrowConfig),
-            500 * 10 ** 6,
+            500 * oneToken,
             48 hours
         );
 
@@ -121,7 +133,7 @@ contract SmartWalletEscrowTest is Test {
 
     function test_CreateEscrow_WithERC20() public {
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
 
         vm.startPrank(admin);
 
@@ -140,7 +152,7 @@ contract SmartWalletEscrowTest is Test {
 
         // Ensure funds moved to escrow contract
         assertEq(usdc.balanceOf(address(escrow)), amount);
-        assertEq(usdc.balanceOf(address(userWallet)), 900 * 10 ** 6);
+        assertEq(usdc.balanceOf(address(userWallet)), 900 * oneToken);
     }
 
     function test_CreateOffer_WithERC20() public {
@@ -151,7 +163,7 @@ contract SmartWalletEscrowTest is Test {
         // Create the Transaction
         // -----------------
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         // Approve escrow from wallet
@@ -171,7 +183,7 @@ contract SmartWalletEscrowTest is Test {
     function test_CreateOfferWithExpiration_UsesCustomDuration() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         uint256 customDuration = 3 hours;
@@ -191,7 +203,7 @@ contract SmartWalletEscrowTest is Test {
     function test_CreateOfferWithExpiration_RevertsAboveMaxDuration() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         uint256 tooLong = escrow.MAX_OFFER_EXPIRATION_DURATION() + 1;
@@ -205,7 +217,7 @@ contract SmartWalletEscrowTest is Test {
     function test_CreateOffer_WithoutExpiration_FallsBackToBrokerDepositLogic() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         // Broker has no security deposit, so the non-broker fallback duration applies
@@ -229,7 +241,7 @@ contract SmartWalletEscrowTest is Test {
         // Deposit the security deposit
         // -----------------
 
-        uint amount = 500 * 10 ** 6;
+        uint amount = 500 * oneToken;
         brokerWallet.depositSecurityDeposit(USDC, amount);
 
         vm.stopPrank();
@@ -253,7 +265,7 @@ contract SmartWalletEscrowTest is Test {
         // Deposit the security deposit
         // -----------------
 
-        uint amount = 500 * 10 ** 6;
+        uint amount = 500 * oneToken;
         brokerWallet.depositSecurityDeposit(USDC, amount);
 
         vm.stopPrank();
@@ -281,5 +293,19 @@ contract SmartWalletEscrowTest is Test {
         assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance);
 
         vm.stopPrank();
+    }
+}
+
+// USDC and USDT on Base, Ethereum and Sepolia
+contract SmartWalletEscrow6DecimalTokenTest is SmartWalletEscrowTest {
+    function _tokenDecimals() internal pure override returns (uint8) {
+        return 6;
+    }
+}
+
+// The Binance-Peg USDC and USDT on BNB Smart Chain
+contract SmartWalletEscrow18DecimalTokenTest is SmartWalletEscrowTest {
+    function _tokenDecimals() internal pure override returns (uint8) {
+        return 18;
     }
 }
