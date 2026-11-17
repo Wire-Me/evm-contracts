@@ -10,6 +10,12 @@ const sepoliaAccounts = [process.env.SEPOLIA_PRIVATE_KEY_1, process.env.SEPOLIA_
 const baseAccounts = [process.env.BASE_PRIVATE_KEY_1, process.env.BASE_PRIVATE_KEY_2]
   .filter((key): key is string => Boolean(key));
 
+const bscTestnetAccounts = [process.env.BSC_TESTNET_PRIVATE_KEY_1]
+  .filter((key): key is string => Boolean(key));
+
+const bscAccounts = [process.env.BSC_PRIVATE_KEY_1]
+  .filter((key): key is string => Boolean(key));
+
 const config: HardhatUserConfig = {
   // localhost by default - see deployAllTask.ts for the check that fails fast with a clear
   // error if nothing's actually listening there instead of a cryptic connection error.
@@ -40,6 +46,16 @@ const config: HardhatUserConfig = {
       chainId: 8453,
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
       accounts: baseAccounts
+    },
+    bscTestnet: {
+      chainId: 97,
+      url: process.env.BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
+      accounts: bscTestnetAccounts
+    },
+    bsc: {
+      chainId: 56,
+      url: process.env.BSC_RPC_URL || "https://bsc-dataseed.bnbchain.org",
+      accounts: bscAccounts
     }
   },
   paths: {

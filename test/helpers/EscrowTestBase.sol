@@ -12,15 +12,20 @@ import "../../lib/forge-std/src/Test.sol";
 /// @dev The tests and the deploy scripts share one mock ERC20 (src/test-tokens/TestStablecoin.sol)
 /// so there's a single definition to keep in step with what actually gets deployed locally.
 function newTestUsdc() returns (TestStablecoin) {
-    return new TestStablecoin("Test USD Coin", "USDC", 6);
+    return newTestUsdc(6);
+}
+
+function newTestUsdc(uint8 decimals_) returns (TestStablecoin) {
+    return new TestStablecoin("Test USD Coin", "USDC", decimals_);
 }
 
 /// @notice Shared deployment/setup for escrow + smart-wallet test suites. Deploys one escrow
 /// proxy, one user wallet, and one broker wallet, all driven by `admin` (who is also the
 /// authorized EOA on each wallet, mirroring how the real backend relayer operates today).
 abstract contract EscrowTestBase is Test {
-    uint internal brokerInitialBalance = 1000 * 10 ** 6;
-    uint internal userInitialBalance = 1000 * 10 ** 6;
+    uint internal oneToken;
+    uint internal brokerInitialBalance;
+    uint internal userInitialBalance;
     bytes32 internal constant USDC = keccak256("USDC");
     bytes32 internal constant USDT = keccak256("USDT");
     bytes32 internal constant NATIVE = keccak256("NATIVE");
@@ -41,13 +46,23 @@ abstract contract EscrowTestBase is Test {
     EscrowConfig internal escrowConfig;
     WalletConfig internal walletConfig;
 
+    /// USDC and USDT have 6 decimals on Base, Ethereum and Sepolia, and 18 on BNB Smart Chain. A
+    /// suite overrides this to run against the other.
+    function _tokenDecimals() internal pure virtual returns (uint8) {
+        return 6;
+    }
+
     function setUp() public virtual {
+        oneToken = 10 ** _tokenDecimals();
+        brokerInitialBalance = 1000 * oneToken;
+        userInitialBalance = 1000 * oneToken;
+
         vm.startPrank(admin);
 
         // -----------------
         // Deploy Mock Token
         // -----------------
-        usdc = newTestUsdc();
+        usdc = newTestUsdc(_tokenDecimals());
 
         // -----------------
         // Deploy Escrow
@@ -63,7 +78,7 @@ abstract contract EscrowTestBase is Test {
             address(escrowImpl),
             admin,
             address(escrowConfig),
-            500 * 10 ** 6,
+            500 * oneToken,
             48 hours
         );
 

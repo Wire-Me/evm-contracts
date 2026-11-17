@@ -7,7 +7,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
 
     function test_CreateEscrow_WithERC20() public {
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
 
         vm.startPrank(admin);
 
@@ -26,7 +26,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
 
         // Ensure funds moved to escrow contract
         assertEq(usdc.balanceOf(address(escrow)), amount);
-        assertEq(usdc.balanceOf(address(userWallet)), 900 * 10 ** 6);
+        assertEq(usdc.balanceOf(address(userWallet)), 900 * oneToken);
     }
 
     function test_CreateOffer_WithERC20() public {
@@ -37,7 +37,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
         // Create the Transaction
         // -----------------
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         // Approve escrow from wallet
@@ -57,7 +57,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
     function test_CreateOfferWithExpiration_UsesCustomDuration() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         uint256 customDuration = 3 hours;
@@ -77,7 +77,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
     function test_CreateOfferWithExpiration_RevertsAboveMaxDuration() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         uint256 tooLong = escrow.MAX_OFFER_EXPIRATION_DURATION() + 1;
@@ -91,7 +91,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
     function test_CreateOffer_WithoutExpiration_FallsBackToBrokerDepositLogic() public {
         vm.startPrank(admin);
 
-        uint amount = 100 * 10 ** 6;
+        uint amount = 100 * oneToken;
         userWallet.transferFundsAndCreateEscrow(USDC, amount);
 
         // Broker has no security deposit, so the non-broker fallback duration applies
@@ -115,7 +115,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
         // Deposit the security deposit
         // -----------------
 
-        uint amount = 500 * 10 ** 6;
+        uint amount = 500 * oneToken;
         brokerWallet.depositSecurityDeposit(USDC, amount);
 
         vm.stopPrank();
@@ -139,7 +139,7 @@ contract SmartWalletEscrowTest is EscrowTestBase {
         // Deposit the security deposit
         // -----------------
 
-        uint amount = 500 * 10 ** 6;
+        uint amount = 500 * oneToken;
         brokerWallet.depositSecurityDeposit(USDC, amount);
 
         vm.stopPrank();
@@ -167,5 +167,12 @@ contract SmartWalletEscrowTest is EscrowTestBase {
         assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance);
 
         vm.stopPrank();
+    }
+}
+
+// The Binance-Peg USDC and USDT on BNB Smart Chain
+contract SmartWalletEscrow18DecimalTokenTest is SmartWalletEscrowTest {
+    function _tokenDecimals() internal pure override returns (uint8) {
+        return 18;
     }
 }

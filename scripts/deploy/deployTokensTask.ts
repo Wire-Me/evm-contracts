@@ -8,8 +8,7 @@ import {
   recordDeployment,
   stateFileExists,
 } from "./deploymentState";
-
-const STABLECOIN_DECIMALS = 6;
+import { readTokenDecimals, stablecoinDecimalsForChain } from "./tokenDecimals";
 
 /// Chain ids where real USDC/USDT already exist and deploying a stand-in would be both wasteful
 /// and misleading. Guarded rather than forbidden outright so a deliberate override is still
@@ -17,6 +16,7 @@ const STABLECOIN_DECIMALS = 6;
 const MAINNET_CHAIN_IDS = new Set([
   1,      // Ethereum
   8453,   // Base
+  56,     // BNB Smart Chain
   10,     // Optimism
   137,    // Polygon
   42161,  // Arbitrum One
@@ -74,6 +74,20 @@ task("deploy-tokens", "Deploys TestStablecoin stand-ins for USDC/USDT and record
       }
     }
 
+    const stablecoinDecimals = stablecoinDecimalsForChain(chainId);
+
+    // A stand-in recorded before decimals depended on the chain (6 on BNB Smart Chain testnet,
+    // where the real tokens have 18) would make every amount 10^12 off, so it's not reused.
+    for (const [key, address] of Object.entries(live)) {
+      const recordedDecimals = await readTokenDecimals(hre, address);
+      if (recordedDecimals !== stablecoinDecimals && !args.redeploy) {
+        throw new Error(
+          `${key} at ${address} on ${network} has ${recordedDecimals} decimals, but stand-ins on chain id ` +
+          `${chainId} need ${stablecoinDecimals}. Pass --redeploy to replace it.`,
+        );
+      }
+    }
+
     const alreadyDeployed = TOKENS_TO_DEPLOY.filter(({ key }) => live[key]);
     if (alreadyDeployed.length === TOKENS_TO_DEPLOY.length && !args.redeploy) {
       console.log(`Tokens already deployed on ${network} (chain id ${chainId}) and still live:`);
@@ -98,9 +112,9 @@ task("deploy-tokens", "Deploys TestStablecoin stand-ins for USDC/USDT and record
         continue;
       }
 
-      const token = await deployTestStablecoin(hre, signer, { name, symbol, decimals: STABLECOIN_DECIMALS });
+      const token = await deployTestStablecoin(hre, signer, { name, symbol, decimals: stablecoinDecimals });
       deployedTokens[key] = await token.getAddress();
-      console.log(`  ${key}: ${deployedTokens[key]} (${symbol}, ${STABLECOIN_DECIMALS} decimals)`);
+      console.log(`  ${key}: ${deployedTokens[key]} (${symbol}, ${stablecoinDecimals} decimals)`);
     }
 
     recordDeployment(network, { chainId, tokens: deployedTokens });
@@ -110,8 +124,9 @@ task("deploy-tokens", "Deploys TestStablecoin stand-ins for USDC/USDT and record
       `Run \`npm run deploy-all${network === "localhost" ? "" : `:${network}`}\` next - it reads ` +
       `these addresses from the state file.`,
     );
+    const oneThousandTokens = 1000n * 10n ** BigInt(stablecoinDecimals);
     console.log(
-      "Mint yourself a balance with: " +
-      `cast send <token> "mint(address,uint256)" <recipient> 1000000000 --rpc-url <url>`,
+      "Mint yourself 1,000 tokens with: " +
+      `cast send <token> "mint(address,uint256)" <recipient> ${oneThousandTokens} --rpc-url <url>`,
     );
   });

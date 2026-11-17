@@ -1,4 +1,5 @@
 import { task } from "hardhat/config";
+import type { HardhatRuntimeEnvironment } from "hardhat/types";
 import { deployEscrowConfig } from "./deployEscrowConfig";
 import { deployFxEscrowMulti } from "./deployFxEscrowMulti";
 import { deployProxyFxEscrowMulti } from "./deployProxyFxEscrowMulti";
@@ -12,8 +13,11 @@ import {
   recordDeployment,
   stateFileExists,
 } from "./deploymentState";
+import { readTokenDecimals } from "./tokenDecimals";
 
-const DEFAULT_MINIMUM_BROKER_DEPOSIT = 500n * 10n ** 6n; // 500 units of a 6-decimal stablecoin
+// In whole tokens. The proxy takes it in base units, so it's scaled by the tokens' own decimals
+// (6 on Base, 18 on BNB Smart Chain); the proxy has no setter, so it must be right at deploy.
+const DEFAULT_MINIMUM_BROKER_DEPOSIT_TOKENS = 500n;
 const DEFAULT_EXPIRATION_DURATION_FOR_NON_BROKERS_SECONDS = 48n * 60n * 60n; // 48 hours
 
 /// Bootstraps a network with the shared (non-per-user) contracts: EscrowConfig, FxEscrowMulti + its
@@ -92,7 +96,7 @@ task("deploy-all", "Deploys EscrowConfig, FxEscrowMulti + proxy, WalletConfig, a
 
     const brokerDepositAmount = process.env.MINIMUM_BROKER_DEPOSIT_AMOUNT
       ? BigInt(process.env.MINIMUM_BROKER_DEPOSIT_AMOUNT)
-      : DEFAULT_MINIMUM_BROKER_DEPOSIT;
+      : DEFAULT_MINIMUM_BROKER_DEPOSIT_TOKENS * 10n ** BigInt(await readEscrowTokenDecimals(hre, usdcErc20Address, usdtErc20Address));
 
     const expirationDurationForNonBrokers = process.env.EXPIRATION_DURATION_FOR_NON_BROKERS_SECONDS
       ? BigInt(process.env.EXPIRATION_DURATION_FOR_NON_BROKERS_SECONDS)
@@ -146,3 +150,27 @@ task("deploy-all", "Deploys EscrowConfig, FxEscrowMulti + proxy, WalletConfig, a
       "deployed separately via deployProxySmartWalletMulti, not part of this bootstrap.",
     );
   });
+
+// The escrow has one broker deposit minimum for both tokens, so they must share decimals.
+async function readEscrowTokenDecimals(hre: HardhatRuntimeEnvironment, usdcAddress: string, usdtAddress: string) {
+  let usdcDecimals: number;
+  let usdtDecimals: number;
+  try {
+    [usdcDecimals, usdtDecimals] = await Promise.all([
+      readTokenDecimals(hre, usdcAddress),
+      readTokenDecimals(hre, usdtAddress),
+    ]);
+  } catch (error) {
+    throw new Error(
+      `Could not read decimals() from the USDC/USDT contracts (${(error as Error).message}). The broker ` +
+      `deposit minimum depends on them, so set MINIMUM_BROKER_DEPOSIT_AMOUNT in base units to deploy anyway.`,
+    );
+  }
+  if (usdcDecimals !== usdtDecimals) {
+    throw new Error(
+      `USDC has ${usdcDecimals} decimals and USDT ${usdtDecimals}, but the escrow has one broker deposit ` +
+      `minimum for both. Set MINIMUM_BROKER_DEPOSIT_AMOUNT explicitly.`,
+    );
+  }
+  return usdcDecimals;
+}
