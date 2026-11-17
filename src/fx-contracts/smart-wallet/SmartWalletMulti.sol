@@ -6,6 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AbstractSmartWalletMulti} from "./AbstractSmartWalletMulti.sol";
 import {WalletConfig} from "./configuration/WalletConfig.sol";
 
+/// @custom:deprecated Deprecated in favor of Openfort embedded wallets (see user-auth /
+/// web-client). Still in active production use: tx-conductor currently routes every escrow
+/// operation through a deployed ProxySmartWalletMulti instance per user/broker instead of
+/// calling FxEscrowMulti directly. Do not build new features on this layer. It can be removed
+/// once tx-conductor calls FxEscrowMulti directly using Openfort-controlled addresses
+/// registered via addAuthorizedUser/addAuthorizedBroker, and existing proxy wallets are
+/// migrated off.
 contract SmartWalletMulti is AbstractSmartWalletMulti {
     event TransferSuccessful(address indexed from, address indexed to, uint amount);
 

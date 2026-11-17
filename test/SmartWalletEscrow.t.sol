@@ -1,135 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.30;
 
-import "../lib/fx-contracts/fx-escrow/FxEscrowMulti.sol";
+import "./helpers/EscrowTestBase.sol";
 
-import "../lib/fx-contracts/fx-escrow/proxy/ProxyFxEscrowMulti.sol";
-import "../lib/fx-contracts/smart-wallet/SmartWalletMulti.sol";
-import "../lib/fx-contracts/smart-wallet/proxy/ProxySmartWalletMulti.sol";
-
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../lib/forge-std/src/Test.sol";
-
-contract MockUSDC is ERC20 {
-    uint8 private immutable tokenDecimals;
-
-    constructor(uint8 _tokenDecimals) ERC20("USDC", "USDC") {
-        tokenDecimals = _tokenDecimals;
-    }
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-
-    function decimals() public view override returns (uint8) {
-        return tokenDecimals;
-    }
-}
-
-// Runs once per stablecoin decimals the escrow is deployed with (see the contracts at the end).
-abstract contract SmartWalletEscrowTest is Test {
-
-    uint internal oneToken;
-    uint brokerInitialBalance;
-    uint userInitialBalance;
-    bytes32 internal constant USDC = keccak256("USDC");
-
-    address internal admin = address(1);
-//    address internal userEOA = address(2);
-
-    MockUSDC internal usdc;
-
-    FxEscrowMulti internal escrowImpl;
-    ProxyFxEscrowMulti internal escrowProxy;
-    FxEscrowMulti internal escrow;
-
-    SmartWalletMulti internal walletImpl;
-    ProxySmartWalletMulti internal walletProxy;
-    SmartWalletMulti internal userWallet;
-    SmartWalletMulti internal brokerWallet;
-
-    EscrowConfig internal escrowConfig;
-    WalletConfig internal walletConfig;
-
-    function _tokenDecimals() internal pure virtual returns (uint8);
-
-    function setUp() public {
-        oneToken = 10 ** _tokenDecimals();
-        brokerInitialBalance = 1000 * oneToken;
-        userInitialBalance = 1000 * oneToken;
-
-        vm.startPrank(admin);
-
-        // -----------------
-        // Deploy Mock Token
-        // -----------------
-        usdc = new MockUSDC(_tokenDecimals());
-
-        // -----------------
-        // Deploy Escrow
-        // -----------------
-        escrowConfig = new EscrowConfig(
-            address(usdc),
-            address(usdc)
-        );
-
-        escrowImpl = new FxEscrowMulti();
-
-        escrowProxy = new ProxyFxEscrowMulti(
-            address(escrowImpl),
-            admin,
-            address(escrowConfig),
-            500 * oneToken,
-            48 hours
-        );
-
-        escrow = FxEscrowMulti(payable(address(escrowProxy)));
-
-        // -----------------
-        // Deploy User Wallet
-        // -----------------
-        walletConfig = new WalletConfig(
-            address(escrow),
-            address(usdc),
-            address(usdc) // using USDC for both for test simplicity
-        );
-
-        walletImpl = new SmartWalletMulti();
-
-        walletProxy = new ProxySmartWalletMulti(
-            address(walletImpl),
-            admin,
-            address(walletConfig)
-        );
-
-        userWallet = SmartWalletMulti(payable(address(walletProxy)));
-
-        // Authorize wallet in escrow
-        escrow.addAuthorizedUser(address(userWallet));
-
-        // -----------------
-        // Deploy Broker Wallet
-        // -----------------
-
-        walletImpl = new SmartWalletMulti();
-
-        walletProxy = new ProxySmartWalletMulti(
-            address(walletImpl),
-            admin,
-            address(walletConfig)
-        );
-
-        brokerWallet = SmartWalletMulti(payable(address(walletProxy)));
-
-        // Authorize wallet in escrow
-        escrow.addAuthorizedBroker(address(brokerWallet));
-
-        vm.stopPrank();
-
-        // Mint USDC to wallet
-        usdc.mint(address(userWallet), userInitialBalance);
-        usdc.mint(address(brokerWallet), brokerInitialBalance);
-    }
+contract SmartWalletEscrowTest is EscrowTestBase {
 
     function test_CreateEscrow_WithERC20() public {
 
@@ -293,13 +167,6 @@ abstract contract SmartWalletEscrowTest is Test {
         assertEq(usdc.balanceOf(address(brokerWallet)), brokerInitialBalance);
 
         vm.stopPrank();
-    }
-}
-
-// USDC and USDT on Base, Ethereum and Sepolia
-contract SmartWalletEscrow6DecimalTokenTest is SmartWalletEscrowTest {
-    function _tokenDecimals() internal pure override returns (uint8) {
-        return 6;
     }
 }
 
