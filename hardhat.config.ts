@@ -29,7 +29,8 @@ const config: HardhatUserConfig = {
   },
   networks: {
     sepolia: {
-      url: "https://sepolia.infura.io/v3/16a91573c45d4467b517aba983248451",
+      // No RPC key in source (this repo is public): set SEPOLIA_RPC_URL in .env, else a public endpoint is used.
+      url: process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com",
       accounts: sepoliaAccounts
     },
     localhost: {
